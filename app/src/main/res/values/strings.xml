@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">分区信息查看器</string>
+    <string name="app_name">DiskInfo</string>
     <string name="refresh">刷新</string>
     <string name="about">关于</string>
     <string name="storage_summary">存储概览</string>

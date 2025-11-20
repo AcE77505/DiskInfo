@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">分区信息查看器</string>
+    <string name="refresh">刷新</string>
+    <string name="about">关于</string>
+    <string name="storage_summary">存储概览</string>
+    <string name="partition_list">分区列表</string>
+    <string name="loading">加载中...</string>
+    <string name="mounted">已挂载</string>
+    <string name="unmounted">未挂载</string>
+    <string name="read_only">只读</string>
+    <string name="read_write">读写</string>
+    <string name="total_partitions">总分区: %d</string>
+    <string name="mounted_partitions">已挂载: %d</string>
+    <string name="total_space">总空间: %s</string>
+    <string name="available_space">可用空间: %s</string>
+</resources>

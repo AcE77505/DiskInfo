@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme. -->
+    <style name="Theme.PartitionInfo" parent="Theme.Material3.DayNight.NoActionBar">
+        <!-- 使用自定义颜色而不是 MD3 颜色 -->
+        <item name="colorPrimary">@color/blue</item>
+        <item name="colorPrimaryVariant">@color/blue</item>
+        <item name="colorOnPrimary">@color/white</item>
+
+        <!-- 状态栏颜色 -->
+        <item name="android:statusBarColor">@color/toolbar_background</item>
+
+        <!-- 导航栏颜色 (API 21+) -->
+        <item name="android:navigationBarColor">@color/background</item>
+    </style>
+</resources>

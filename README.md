@@ -27,7 +27,7 @@ DiskInfo 是一款借助 AI 开发的 Android 应用，专门用于查看设备�
 
 ### 版本兼容性问题
 - **Android 9 及以下版本**：可能存在无法解析分区名和占用情况的问题
-- **SELinux 限制**：当前版本需要在 SELinux Permissive 模式下运行
+- **SELinux 限制**：当前版本需要在 SELinux Permissive 模式下运行(后续版本会通过root获取信息解决问题)
 
 ### 当前版本限制
 - 仅支持在 **SELinux Permissive** 模式下获取完整信息

@@ -19,19 +19,34 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
+
     signingConfigs {
-        create("release") {
-            storeFile = file("YOUR_STORE_FILE")
-            storePassword = "YOUR_STORE_PASSWORD"
-            keyAlias = "YOUR_KEY_ALIAS"
-            keyPassword = "YOUR_KEY_PASSWORD"
+        release {
             enableV1Signing = true
             enableV2Signing = true
             enableV3Signing = true
         }
     }
 
+    File propFile = rootProject.file('signing.properties')
+    if (propFile.exists()) {
+        Properties props = new Properties()
+        props.load(new FileInputStream(propFile))
+        if (props.containsKey('STORE_FILE') && props.containsKey('STORE_PASSWORD') &&
+                props.containsKey('KEY_ALIAS') && props.containsKey('KEY_PASSWORD')) {
+            // 使用 rootProject.file 来确保从项目根目录查找文件
+            signingConfigs.release.storeFile = rootProject.file(props['STORE_FILE'])
+            signingConfigs.release.storePassword = props['STORE_PASSWORD']
+            signingConfigs.release.keyAlias = props['KEY_ALIAS']
+            signingConfigs.release.keyPassword = props['KEY_PASSWORD']
+        } else {
+            android.buildTypes.release.signingConfig = null
+        }
+    } else {
+        android.buildTypes.release.signingConfig = null
+    }
 
+    // 然后定义 buildTypes
     buildTypes {
         release {
             minifyEnabled true
@@ -39,9 +54,11 @@ android {
             signingConfig signingConfigs.release
         }
     }
+
     buildFeatures {
         viewBinding true
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11

@@ -30,7 +30,7 @@ DiskInfo 是一款借助 AI 开发的 Android 应用，专门用于查看设备�
 - **SELinux 限制**：当前版本需要在 SELinux Permissive 模式下运行(后续版本会通过root获取信息解决问题)
 
 ### 当前版本限制
-- 仅支持在 **SELinux Permissive** 模式下获取完整信息
+- 在 **SELinux Permissive** 模式下完全支持
 - 在 **SELinux Enforcing** 设备上可能遇到：
   - 分区列表不显示
   - 分区名称无法解析

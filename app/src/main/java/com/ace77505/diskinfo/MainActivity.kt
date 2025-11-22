@@ -1,13 +1,12 @@
 package com.ace77505.diskinfo
 
-import android.content.Context
 import android.content.Intent
-import android.graphics.BlendMode
-import android.graphics.BlendModeColorFilter
 import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
 import android.os.Bundle
 import android.os.Build
-import android.view.View
+import android.util.TypedValue
+import android.view.Menu
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -15,8 +14,10 @@ import com.ace77505.diskinfo.data.PartitionDataManager
 import com.ace77505.diskinfo.data.PartitionInfo
 import com.google.android.material.appbar.MaterialToolbar
 import kotlinx.coroutines.*
-import androidx.core.view.size
 import androidx.core.view.get
+import com.google.android.material.color.DynamicColors
+import androidx.core.view.size
+
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,42 +30,17 @@ class MainActivity : AppCompatActivity() {
     private var loadJob: Job? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            DynamicColors.applyToActivityIfAvailable(this)
+        }
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
-        // 强制设置状态栏颜色
-        window.statusBarColor = ContextCompat.getColor(this, R.color.toolbar_background)
-
-        // 动态设置状态栏图标颜色（仅在 API 23+ 可用）
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            if (isDarkTheme(this)) {
-                // 深色主题 - 状态栏图标为白色
-                window.decorView.systemUiVisibility = window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-            } else {
-                // 浅色主题 - 状态栏图标为黑色
-                window.decorView.systemUiVisibility = window.decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-            }
-        }
-
-        // 动态设置导航栏图标颜色（仅在 API 27+ 可用）
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            if (isDarkTheme(this)) {
-                window.decorView.systemUiVisibility = window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
-            } else {
-                window.decorView.systemUiVisibility = window.decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-            }
-        }
 
         setupViews()
         setupRecyclerView()
         loadPartitionData()
     }
 
-    // 检查当前是否为深色主题
-    private fun isDarkTheme(context: Context): Boolean {
-        val flag = context.resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK
-        return flag == android.content.res.Configuration.UI_MODE_NIGHT_YES
-    }
     private fun setupViews() {
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -74,33 +50,25 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.partitionsRecyclerView)
         progressIndicator = findViewById(R.id.progressIndicator)
     }
-    override fun onCreateOptionsMenu(menu: android.view.Menu): Boolean {
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
+
+        // 解析 ?attr/colorOnSurface 为色值
+        val typedValue = TypedValue()
+        theme.resolveAttribute(android.R.attr.colorForeground, typedValue, true)
+        val tint = if (typedValue.resourceId != 0) {
+            ContextCompat.getColor(this, typedValue.resourceId)
+        } else {
+            typedValue.data
+        }
+
+        // 给所有菜单图标染色（包括溢出图标）
+        for (i in 0 until menu.size) {
+            menu[i].icon?.colorFilter = PorterDuffColorFilter(tint, PorterDuff.Mode.SRC_ATOP)
+        }
         return true
     }
 
-    override fun onPrepareOptionsMenu(menu: android.view.Menu): Boolean {
-        for (i in 0 until menu.size) {
-            val menuItem = menu[i]
-            val icon = menuItem.icon
-            if (icon != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    // 使用主题颜色而不是硬编码的黑色
-                    icon.colorFilter = BlendModeColorFilter(
-                        ContextCompat.getColor(this, R.color.text_primary),
-                        BlendMode.SRC_ATOP
-                    )
-                } else {
-                    @Suppress("DEPRECATION")
-                    icon.setColorFilter(
-                        ContextCompat.getColor(this, R.color.text_primary),
-                        PorterDuff.Mode.SRC_ATOP
-                    )
-                }
-            }
-        }
-        return super.onPrepareOptionsMenu(menu)
-    }
     private fun setupRecyclerView() {
         adapter = PartitionAdapter(emptyList())
         // 关键：在设置适配器后立即初始化颜色资源
@@ -231,7 +199,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
     override fun onDestroy() {
         super.onDestroy()
         mainScope.cancel()

@@ -1,12 +1,15 @@
 package com.ace77505.diskinfo
 
+import android.graphics.PorterDuff
+import android.graphics.PorterDuffColorFilter
+import android.util.TypedValue
 import android.os.Bundle
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.google.android.material.switchmaterial.SwitchMaterial
 import androidx.core.content.edit
+import com.google.android.material.switchmaterial.SwitchMaterial
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -21,15 +24,11 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var usageSizeValue: TextView
     private lateinit var otherTextSizeValue: TextView
 
-    // 添加标志位跟踪设置是否被修改
     private var settingsChanged = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
-
-        // 设置状态栏颜色 - 使用兼容的方法
-        window.statusBarColor = ContextCompat.getColor(this, R.color.toolbar_background)
 
         setupViews()
         loadSettings()
@@ -38,14 +37,23 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupViews() {
-        // 设置 Toolbar
         val toolbar = findViewById<com.google.android.material.appbar.MaterialToolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
 
-        // 设置 Toolbar 导航图标颜色 - 使用兼容的方法
-        toolbar.setNavigationIconTint(ContextCompat.getColor(this, R.color.text_primary))
+        // 导航图标染色：跟随主题 colorOnSurface
+        val onSurfaceColor = resolveColorOnSurface()
+        toolbar.navigationIcon?.colorFilter =
+            PorterDuffColorFilter(onSurfaceColor, PorterDuff.Mode.SRC_ATOP)
+
+        // 菜单图标染色（可选，若仍想手动）
+        // 若决定完全交给 MD3，可删除下方循环
+        toolbar.setOnMenuItemClickListener { item ->
+            item.icon?.colorFilter =
+                PorterDuffColorFilter(onSurfaceColor, PorterDuff.Mode.SRC_ATOP)
+            false
+        }
 
         displaySizeSeekBar = findViewById(R.id.displaySizeSeekBar)
         partitionNameSizeSeekBar = findViewById(R.id.partitionNameSizeSeekBar)
@@ -59,9 +67,21 @@ class SettingsActivity : AppCompatActivity() {
         otherTextSizeValue = findViewById(R.id.otherTextSizeValue)
     }
 
+    /**
+     * 通过主题属性解析 colorOnSurface 色值
+     */
+    private fun resolveColorOnSurface(): Int {
+        val typedValue = TypedValue()
+        theme.resolveAttribute(android.R.attr.colorForeground, typedValue, true)
+        return if (typedValue.resourceId != 0) {
+            ContextCompat.getColor(this, typedValue.resourceId)
+        } else {
+            typedValue.data
+        }
+    }
+
     private fun loadSettings() {
         val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
-
         displaySizeSeekBar.progress = prefs.getInt("display_size", 2)
         partitionNameSizeSeekBar.progress = prefs.getInt("partition_name_size", 2)
         usageSizeSeekBar.progress = prefs.getInt("usage_size", 2)
@@ -125,20 +145,13 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun saveSetting(key: String, value: Int) {
-        getSharedPreferences("app_settings", MODE_PRIVATE)
-            .edit {
-                putInt(key, value)
-            }
+        getSharedPreferences("app_settings", MODE_PRIVATE).edit { putInt(key, value) }
     }
 
     private fun saveSetting(key: String, value: Boolean) {
-        getSharedPreferences("app_settings", MODE_PRIVATE)
-            .edit {
-                putBoolean(key, value)
-            }
+        getSharedPreferences("app_settings", MODE_PRIVATE).edit { putBoolean(key, value) }
     }
 
-    // 更新单个值的显示
     private fun updateValueDisplay(textView: TextView, progress: Int) {
         val displayText = when (progress) {
             0 -> "很小"
@@ -151,7 +164,6 @@ class SettingsActivity : AppCompatActivity() {
         textView.text = displayText
     }
 
-    // 更新所有值的显示
     private fun updateAllValueDisplays() {
         updateValueDisplay(displaySizeValue, displaySizeSeekBar.progress)
         updateValueDisplay(partitionNameSizeValue, partitionNameSizeSeekBar.progress)
@@ -160,25 +172,15 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        // 根据设置是否被修改来设置返回结果
-        if (settingsChanged) {
-            setResult(RESULT_OK)
-        } else {
-            setResult(RESULT_CANCELED)
-        }
+        setResult(if (settingsChanged) RESULT_OK else RESULT_CANCELED)
         finish()
         return true
     }
 
-    // 处理返回键
+
     @Deprecated("This method has been deprecated in favor of using the\n      {@link OnBackPressedDispatcher} via {@link #getOnBackPressedDispatcher()}.\n      The OnBackPressedDispatcher controls how back button events are dispatched\n      to one or more {@link OnBackPressedCallback} objects.")
     override fun onBackPressed() {
-        // 根据设置是否被修改来设置返回结果
-        if (settingsChanged) {
-            setResult(RESULT_OK)
-        } else {
-            setResult(RESULT_CANCELED)
-        }
+        setResult(if (settingsChanged) RESULT_OK else RESULT_CANCELED)
         super.onBackPressed()
     }
 }

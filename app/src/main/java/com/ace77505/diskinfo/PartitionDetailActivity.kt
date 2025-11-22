@@ -24,7 +24,7 @@ class PartitionDetailActivity : AppCompatActivity() {
         setContentView(R.layout.activity_partition_detail)
 
         // 设置状态栏颜色
-        window.statusBarColor = ContextCompat.getColor(this, R.color.toolbar_background)
+        //window.statusBarColor = ContextCompat.getColor(this, R.color.toolbar_background)
 
         setupViews()
         setupRecyclerView()

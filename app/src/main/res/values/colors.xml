@@ -1,59 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Material Design 3 浅色主题颜色 -->
-    <color name="md_theme_light_primary">#6750A4</color>
-    <color name="md_theme_light_onPrimary">#FFFFFF</color>
-    <color name="md_theme_light_primaryContainer">#EADDFF</color>
-    <color name="md_theme_light_onPrimaryContainer">#21005D</color>
-    <color name="md_theme_light_secondary">#625B71</color>
-    <color name="md_theme_light_onSecondary">#FFFFFF</color>
-    <color name="md_theme_light_secondaryContainer">#E8DEF8</color>
-    <color name="md_theme_light_onSecondaryContainer">#1D192B</color>
-    <color name="md_theme_light_surface">#FFFBFE</color>
-    <color name="md_theme_light_onSurface">#1C1B1F</color>
-    <color name="md_theme_light_surfaceVariant">#E7E0EC</color>
-    <color name="md_theme_light_onSurfaceVariant">#49454F</color>
+    <!-- ===== Material 3 浅色静态调色板 ===== -->
+    <color name="md_theme_primary">#6750A4</color>
+    <color name="md_theme_onPrimary">#FFFFFF</color>
+    <color name="md_theme_primaryContainer">#EADDFF</color>
+    <color name="md_theme_onPrimaryContainer">#21005D</color>
 
-    <!-- Material Design 3 深色主题颜色 (在浅色模式中也声明) -->
-    <color name="md_theme_dark_primary">#D0BCFF</color>
-    <color name="md_theme_dark_onPrimary">#381E72</color>
-    <color name="md_theme_dark_primaryContainer">#4F378B</color>
-    <color name="md_theme_dark_onPrimaryContainer">#EADDFF</color>
-    <color name="md_theme_dark_secondary">#CCC2DC</color>
-    <color name="md_theme_dark_onSecondary">#332D41</color>
-    <color name="md_theme_dark_secondaryContainer">#4A4458</color>
-    <color name="md_theme_dark_onSecondaryContainer">#E8DEF8</color>
-    <color name="md_theme_dark_surface">#1C1B1F</color>
-    <color name="md_theme_dark_onSurface">#E6E1E5</color>
-    <color name="md_theme_dark_surfaceVariant">#49454F</color>
-    <color name="md_theme_dark_onSurfaceVariant">#CAC4D0</color>
+    <color name="md_theme_surface">#FFFBFE</color>
+    <color name="md_theme_onSurface">#1C1B1F</color>
+    <color name="md_theme_surfaceVariant">#E7E0EC</color>
+    <color name="md_theme_onSurfaceVariant">#49454F</color>
 
-    <!-- 基础颜色 -->
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="colorPrimary">#1976D2</color>
-    <color name="track_color">#E0E0E0</color>
+    <!-- 强调/进度条用主色即可 -->
+    <color name="progress_track">#E0E0E0</color>
+    <!-- 映射到 MD3 语义色，方便代码直接引用 -->
+    <color name="on_surface">?attr/colorOnSurface</color>
 
-    <!-- 新增基础颜色 -->
-    <color name="blue">#1976D2</color>
-    <color name="red">#F44336</color>
-    <color name="green">#4CAF50</color>
-    <color name="orange">#FF9800</color>
-    <color name="purple">#9C27B0</color>
-
-    <!-- 自定义颜色 -->
-    <color name="card_stroke_color">#1F000000</color>
     <color name="loop_partition_color">#FFF0F0</color>  <!-- 浅粉色 -->
     <color name="super_partition_color">#E3F2FD</color>  <!-- 浅蓝色 -->
     <color name="external_storage_color">#E8F5E8</color>  <!-- 浅绿色 -->
     <color name="default_partition_color">#FFFFFF</color>  <!-- 白色 -->
-
-    <!-- 文字颜色 -->
-    <color name="text_primary">#FF000000</color>
-    <color name="text_secondary">#8A000000</color>
-
-    <!-- 背景颜色 -->
-    <color name="background">#FFFFFFFF</color>
-    <color name="surface">#FFFFFFFF</color>
-    <color name="toolbar_background">#F5F5F5</color>
 </resources>

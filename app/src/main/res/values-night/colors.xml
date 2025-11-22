@@ -1,20 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 自定义颜色 -->
-    <color name="card_stroke_color">#33FFFFFF</color>
+    <!-- ===== Material 3 深色静态调色板 ===== -->
+    <color name="md_theme_primary">#D0BCFF</color>
+    <color name="md_theme_onPrimary">#381E72</color>
+    <color name="md_theme_primaryContainer">#4F378B</color>
+    <color name="md_theme_onPrimaryContainer">#EADDFF</color>
 
-    <!-- 深色模式下的分区卡片颜色 -->
+    <color name="md_theme_surface">#1C1B1F</color>
+    <color name="md_theme_onSurface">#E6E1E5</color>
+    <color name="md_theme_surfaceVariant">#49454F</color>
+    <color name="md_theme_onSurfaceVariant">#CAC4D0</color>
+
+    <!-- 进度条轨道深色变体 -->
+    <color name="progress_track">#2C2B30</color>
+
     <color name="loop_partition_color">#2D1B1B</color>
     <color name="super_partition_color">#1A2D3D</color>
     <color name="external_storage_color">#1A2D1B</color>
     <color name="default_partition_color">#2D2D2D</color>
-
-    <!-- 文字颜色 -->
-    <color name="text_primary">#FFFFFFFF</color>
-    <color name="text_secondary">#B3FFFFFF</color>
-
-    <!-- 背景颜色 - 使用更深的颜色确保在低 API 设备上也有良好的深色体验 -->
-    <color name="background">#121212</color>
-    <color name="surface">#121212</color>
-    <color name="toolbar_background">#1A1A1A</color>  <!-- 比背景稍亮一点的深灰色 -->
 </resources>

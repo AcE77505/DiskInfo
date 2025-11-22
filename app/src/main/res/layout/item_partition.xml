@@ -9,18 +9,19 @@
     android:layerType="hardware"
     android:focusable="false"
     android:focusableInTouchMode="false"
-    app:cardCornerRadius="10dp"
-    app:cardElevation="3dp"
-    app:strokeColor="@color/card_stroke_color"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="1dp"
+    app:cardBackgroundColor="?attr/colorSurfaceVariant"
+    app:strokeColor="?attr/colorOutline"
     app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="8dp">
+        android:padding="12dp">
 
-        <!-- 第一行：分区名称、文件系统类型、挂载状态 -->
+        <!-- 第一行 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -33,15 +34,14 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="@color/text_primary"
-                android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                android:textStyle="normal" />
+                android:textColor="?attr/colorOnSurface"
+                android:textAppearance="@style/TextAppearance.Material3.TitleMedium" />
 
             <TextView
                 android:id="@+id/filesystemType"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/text_secondary"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textAppearance="@style/TextAppearance.Material3.BodySmall"
                 android:layout_marginEnd="6dp" />
 
@@ -50,43 +50,38 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="11sp"
-                android:textStyle="normal"
-                android:textColor="@color/text_secondary" />
-
+                android:textColor="?attr/colorOnSurfaceVariant" />
         </LinearLayout>
 
-        <!-- 第二行：设备路径 -->
+        <!-- 设备路径 -->
         <TextView
             android:id="@+id/devicePath"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="@color/text_secondary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textAppearance="@style/TextAppearance.Material3.BodySmall"
             android:layout_marginBottom="8dp" />
 
-        <!-- 进度条容器 -->
+        <!-- 进度条 -->
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="4dp">
 
-            <!-- 进度条背景 -->
             <View
                 android:id="@+id/progressBackground"
                 android:layout_width="match_parent"
                 android:layout_height="3dp"
-                android:background="@color/track_color" />
+                android:background="?attr/colorSurfaceVariant" />
 
-            <!-- 进度条前景 -->
             <View
                 android:id="@+id/progressFill"
                 android:layout_width="0dp"
                 android:layout_height="3dp"
-                android:background="@color/blue" />
-
+                android:background="?attr/colorPrimary" />
         </FrameLayout>
 
-        <!-- 第三行：空间信息和百分比 -->
+        <!-- 空间信息 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -98,20 +93,15 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:textColor="@color/text_primary"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textStyle="normal" />
+                android:textColor="?attr/colorOnSurface"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
 
             <TextView
                 android:id="@+id/usagePercentage"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="@color/text_primary"
-                android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                android:textStyle="normal" />
-
+                android:textColor="?attr/colorOnSurface"
+                android:textAppearance="@style/TextAppearance.Material3.BodySmall" />
         </LinearLayout>
-
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

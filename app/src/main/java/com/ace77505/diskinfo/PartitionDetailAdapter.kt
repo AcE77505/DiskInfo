@@ -13,19 +13,44 @@ class PartitionDetailAdapter : RecyclerView.Adapter<PartitionDetailAdapter.ViewH
 
     private var partition: PartitionInfo? = null
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val titleTextView: com.google.android.material.textview.MaterialTextView = itemView.findViewById(R.id.detail_title)
-        private val valueTextView: com.google.android.material.textview.MaterialTextView = itemView.findViewById(R.id.detail_value)
+    // 定义卡片类型
+    companion object {
+        private const val TYPE_DEVICE_NAME = 0
+        private const val TYPE_STORAGE_INFO = 1
+        private const val TYPE_MOUNT_POINTS = 2
+    }
 
-        fun bind(title: String, value: String) {
-            titleTextView.text = title
-            valueTextView.text = value
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        // 设备名卡片视图
+        val deviceNameValue: com.google.android.material.textview.MaterialTextView? = itemView.findViewById(R.id.device_name_value)
+
+        // 存储信息卡片视图
+        val filesystemValue: com.google.android.material.textview.MaterialTextView? = itemView.findViewById(R.id.filesystem_value)
+        val partitionSizeValue: com.google.android.material.textview.MaterialTextView? = itemView.findViewById(R.id.partition_size_value)
+        val usedSpaceValue: com.google.android.material.textview.MaterialTextView? = itemView.findViewById(R.id.used_space_value)
+
+        // 挂载点卡片视图
+        val mountPointsValue: com.google.android.material.textview.MaterialTextView? = itemView.findViewById(R.id.mount_points_value)
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        return when (position) {
+            0 -> TYPE_DEVICE_NAME
+            1 -> TYPE_STORAGE_INFO
+            2 -> TYPE_MOUNT_POINTS
+            else -> TYPE_DEVICE_NAME
         }
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_partition_detail, parent, false)
+        val layoutRes = when (viewType) {
+            TYPE_DEVICE_NAME -> R.layout.item_device_name_card
+            TYPE_STORAGE_INFO -> R.layout.item_storage_info_card
+            TYPE_MOUNT_POINTS -> R.layout.item_mount_points_card
+            else -> R.layout.item_device_name_card
+        }
+
+        val view = LayoutInflater.from(parent.context).inflate(layoutRes, parent, false)
         return ViewHolder(view)
     }
 
@@ -33,72 +58,35 @@ class PartitionDetailAdapter : RecyclerView.Adapter<PartitionDetailAdapter.ViewH
         val partition = partition ?: return
 
         when (position) {
-            0 -> {
-                // 设备名
+            TYPE_DEVICE_NAME -> {
+                // 设备名卡片
                 val deviceName = partition.devicePath.substringAfterLast('/')
-                holder.bind("设备名", deviceName)
+                holder.deviceNameValue?.text = deviceName
             }
-            1 -> {
-                // 文件系统
-                holder.bind("文件系统", partition.fileSystemType)
+            TYPE_STORAGE_INFO -> {
+                // 存储信息卡片（文件系统、分区大小、已用空间）
+                holder.filesystemValue?.text = partition.fileSystemType
+                holder.partitionSizeValue?.text = PartitionDataManager.formatBytes(partition.size)
+                holder.usedSpaceValue?.text = PartitionDataManager.formatBytes(partition.usedSpace)
             }
-            2 -> {
-                // 分区大小
-                holder.bind("分区大小", PartitionDataManager.formatBytes(partition.size))
-            }
-            3 -> {
-                // 已用空间
-                holder.bind("已用空间", PartitionDataManager.formatBytes(partition.usedSpace))
-            }
-            4 -> {
-                // 挂载点 - 从系统获取所有相关挂载点
+            TYPE_MOUNT_POINTS -> {
+                // 挂载点卡片
                 val mountPoints = getAllMountPointsFromSystem(partition)
                 if (mountPoints.isNotEmpty()) {
                     val sortedMountPoints = sortMountPointsIfNeeded(partition, mountPoints)
-                    holder.bind("挂载点", sortedMountPoints.joinToString("\n"))
+                    holder.mountPointsValue?.text = sortedMountPoints.joinToString("\n")
                 } else {
-                    holder.bind("挂载点", "未挂载")
+                    holder.mountPointsValue?.text = "未挂载"
                 }
             }
         }
     }
 
-    override fun getItemCount(): Int = 5 // 设备名、文件系统、分区大小、已用空间、挂载点
+    override fun getItemCount(): Int = 3 // 3个卡片：设备名、存储信息、挂载点
 
     fun updateData(newPartition: PartitionInfo) {
-        val oldPartition = partition
         partition = newPartition
-
-        // 使用更高效的更新方式
-        if (oldPartition == null) {
-            // 第一次设置数据
-            notifyItemRangeInserted(0, itemCount)
-        } else {
-            // 数据更新，检查哪些项目发生了变化
-            for (i in 0 until itemCount) {
-                if (hasItemChanged(oldPartition, newPartition, i)) {
-                    notifyItemChanged(i)
-                }
-            }
-        }
-    }
-
-    /**
-     * 检查指定位置的项目是否发生变化
-     */
-    private fun hasItemChanged(oldPartition: PartitionInfo, newPartition: PartitionInfo, position: Int): Boolean {
-        return when (position) {
-            0 -> oldPartition.devicePath != newPartition.devicePath
-            1 -> oldPartition.fileSystemType != newPartition.fileSystemType
-            2 -> oldPartition.size != newPartition.size
-            3 -> oldPartition.usedSpace != newPartition.usedSpace
-            4 -> {
-                val oldMountPoints = getAllMountPointsFromSystem(oldPartition)
-                val newMountPoints = getAllMountPointsFromSystem(newPartition)
-                oldMountPoints != newMountPoints
-            }
-            else -> false
-        }
+        notifyDataSetChanged()
     }
 
     /**

@@ -88,14 +88,24 @@ object PartitionDataManager {
      */
     private fun copyDebugInfoToClipboard(context: Context) {
         try {
+            // 检查设置，默认不复制
+            val prefs = context.getSharedPreferences("app_settings", Context.MODE_PRIVATE)
+            val shouldCopy = prefs.getBoolean("default_copy_info", false)
+
+            if (!shouldCopy) {
+                debugInfo.append("\n=== 调试信息未复制到剪贴板（设置中已关闭默认复制） ===\n")
+                return
+            }
+
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("分区调试信息", debugInfo.toString())
             clipboard.setPrimaryClip(clip)
+            debugInfo.append("\n=== 调试信息已复制到剪贴板 ===\n")
         } catch (e: Exception) {
             e.printStackTrace()
+            debugInfo.append("\n=== 复制调试信息时出错: ${e.message} ===\n")
         }
     }
-
     /**
      * 构建分区信息 - 增强版本，支持 vold 设备
      */

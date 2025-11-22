@@ -6,9 +6,11 @@ import android.util.TypedValue
 import android.os.Bundle
 import android.widget.SeekBar
 import android.widget.TextView
+import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.view.WindowCompat
 import com.google.android.material.switchmaterial.SwitchMaterial
 
 class SettingsActivity : AppCompatActivity() {
@@ -18,6 +20,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var usageSizeSeekBar: SeekBar
     private lateinit var otherTextSizeSeekBar: SeekBar
     private lateinit var hideLoopDevicesSwitch: SwitchMaterial
+    private lateinit var defaultCopyInfoSwitch: SwitchMaterial // 新增
 
     private lateinit var displaySizeValue: TextView
     private lateinit var partitionNameSizeValue: TextView
@@ -28,12 +31,31 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         setContentView(R.layout.activity_settings)
+
+        // 设置返回按钮处理
+        setupBackPressedHandler()
 
         setupViews()
         loadSettings()
         setupListeners()
         updateAllValueDisplays()
+    }
+
+    /**
+     * 设置返回按钮处理 - 使用新的 OnBackPressedDispatcher API
+     */
+    private fun setupBackPressedHandler() {
+        val onBackPressedCallback = object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                // 处理返回按钮逻辑
+                setResult(if (settingsChanged) RESULT_OK else RESULT_CANCELED)
+                finish()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this, onBackPressedCallback)
     }
 
     private fun setupViews() {
@@ -60,6 +82,7 @@ class SettingsActivity : AppCompatActivity() {
         usageSizeSeekBar = findViewById(R.id.usageSizeSeekBar)
         otherTextSizeSeekBar = findViewById(R.id.otherTextSizeSeekBar)
         hideLoopDevicesSwitch = findViewById(R.id.hideLoopDevicesSwitch)
+        defaultCopyInfoSwitch = findViewById(R.id.defaultCopyInfoSwitch) // 新增
 
         displaySizeValue = findViewById(R.id.displaySizeValue)
         partitionNameSizeValue = findViewById(R.id.partitionNameSizeValue)
@@ -87,6 +110,7 @@ class SettingsActivity : AppCompatActivity() {
         usageSizeSeekBar.progress = prefs.getInt("usage_size", 2)
         otherTextSizeSeekBar.progress = prefs.getInt("other_text_size", 2)
         hideLoopDevicesSwitch.isChecked = prefs.getBoolean("hide_loop_devices", false)
+        defaultCopyInfoSwitch.isChecked = prefs.getBoolean("default_copy_info", false) // 新增，默认关闭
     }
 
     private fun setupListeners() {
@@ -98,11 +122,13 @@ class SettingsActivity : AppCompatActivity() {
                     settingsChanged = true
                 }
             }
+
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-        partitionNameSizeSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+        partitionNameSizeSeekBar.setOnSeekBarChangeListener(object :
+            SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
                     saveSetting("partition_name_size", progress)
@@ -110,6 +136,7 @@ class SettingsActivity : AppCompatActivity() {
                     settingsChanged = true
                 }
             }
+
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
@@ -122,6 +149,7 @@ class SettingsActivity : AppCompatActivity() {
                     settingsChanged = true
                 }
             }
+
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
@@ -134,12 +162,19 @@ class SettingsActivity : AppCompatActivity() {
                     settingsChanged = true
                 }
             }
+
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
         hideLoopDevicesSwitch.setOnCheckedChangeListener { _, isChecked ->
             saveSetting("hide_loop_devices", isChecked)
+            settingsChanged = true
+        }
+
+        // 新增：默认复制信息开关监听器
+        defaultCopyInfoSwitch.setOnCheckedChangeListener { _, isChecked ->
+            saveSetting("default_copy_info", isChecked)
             settingsChanged = true
         }
     }
@@ -175,12 +210,5 @@ class SettingsActivity : AppCompatActivity() {
         setResult(if (settingsChanged) RESULT_OK else RESULT_CANCELED)
         finish()
         return true
-    }
-
-
-    @Deprecated("This method has been deprecated in favor of using the\n      {@link OnBackPressedDispatcher} via {@link #getOnBackPressedDispatcher()}.\n      The OnBackPressedDispatcher controls how back button events are dispatched\n      to one or more {@link OnBackPressedCallback} objects.")
-    override fun onBackPressed() {
-        setResult(if (settingsChanged) RESULT_OK else RESULT_CANCELED)
-        super.onBackPressed()
     }
 }

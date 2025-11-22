@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources xmlns:tools="http://schemas.android.com/tools">
+<resources>
+
     <style name="Theme.PartitionInfo" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- 主色：紫（日夜共用，MD3 会自动切到深色紫） -->
         <item name="colorPrimary">@color/md_theme_primary</item>

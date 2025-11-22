@@ -7,9 +7,10 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="?attr/colorSurface"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <!-- 使用简单的Toolbar布局，彻底移除CoordinatorLayout的滚动效果 -->
+    <!-- 只需要在根布局添加 fitsSystemWindows="true" -->
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
@@ -19,14 +20,12 @@
         app:titleTextColor="?attr/colorOnSurface"
         app:menu="@menu/main_menu" />
 
-    <!-- 内容列表 - 使用简单的布局 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/partitionsRecyclerView"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <!-- 进度条 -->
     <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/progressIndicator"
         android:layout_width="match_parent"

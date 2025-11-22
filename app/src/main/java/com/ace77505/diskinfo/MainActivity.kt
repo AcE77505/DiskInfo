@@ -7,9 +7,9 @@ import android.os.Bundle
 import android.os.Build
 import android.util.TypedValue
 import android.view.Menu
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.WindowCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.ace77505.diskinfo.data.PartitionDataManager
 import com.ace77505.diskinfo.data.PartitionInfo
@@ -20,7 +20,7 @@ import com.google.android.material.color.DynamicColors
 import androidx.core.view.size
 
 
-class MainActivity : AppCompatActivity() {
+    class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: androidx.recyclerview.widget.RecyclerView
     private lateinit var adapter: PartitionAdapter
@@ -35,54 +35,16 @@ class MainActivity : AppCompatActivity() {
             DynamicColors.applyToActivityIfAvailable(this)
         }
         super.onCreate(savedInstanceState)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+
         setContentView(R.layout.activity_main)
 
         setupViews()
         setupRecyclerView()
         loadPartitionData()
-        setStatusBarAppearance()
-    }
-    private fun setStatusBarAppearance() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            // 检查当前是否是深色主题
-            val isDarkTheme = isDarkTheme()
-
-            window.decorView.systemUiVisibility = if (isDarkTheme) {
-                // 深色模式：状态栏图标为白色
-                window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR.inv()
-            } else {
-                // 浅色模式：状态栏图标为黑色
-                window.decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-            }
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            // 同样处理导航栏
-            val isDarkTheme = isDarkTheme()
-            window.decorView.systemUiVisibility = if (isDarkTheme) {
-                window.decorView.systemUiVisibility and View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR.inv()
-            } else {
-                window.decorView.systemUiVisibility or View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR
-            }
-        }
-    }
-    private fun isDarkTheme(): Boolean {
-        val typedValue = TypedValue()
-        theme.resolveAttribute(android.R.attr.colorBackground, typedValue, true)
-        val backgroundColor = if (typedValue.resourceId != 0) {
-            ContextCompat.getColor(this, typedValue.resourceId)
-        } else {
-            typedValue.data
-        }
-
-        // 简单的亮度计算来判断是否是深色背景
-        val darkness = 1 - (0.299 * android.graphics.Color.red(backgroundColor) +
-                0.587 * android.graphics.Color.green(backgroundColor) +
-                0.114 * android.graphics.Color.blue(backgroundColor)) / 255
-        return darkness > 0.5
     }
 
-    private fun setupViews() {
+        private fun setupViews() {
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
@@ -246,6 +208,6 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         // 每次回到页面时检查主题变化
-        setStatusBarAppearance()
+        WindowCompat.setDecorFitsSystemWindows(window, false)
     }
 }

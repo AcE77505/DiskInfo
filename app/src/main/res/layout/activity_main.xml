@@ -1,44 +1,38 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:orientation="vertical"
     android:background="?attr/colorSurface"
     tools:context=".MainActivity">
 
-    <!-- AppBar -->
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appBarLayout"
+    <!-- 使用简单的Toolbar布局，彻底移除CoordinatorLayout的滚动效果 -->
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="?attr/actionBarSize"
         android:background="?attr/colorSurface"
-        app:elevation="0dp">
+        app:title="@string/app_name"
+        app:titleTextColor="?attr/colorOnSurface"
+        app:menu="@menu/main_menu" />
 
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            app:title="@string/app_name"
-            app:titleTextColor="?attr/colorOnSurface"
-            app:menu="@menu/main_menu" />
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <!-- 内容列表 -->
+    <!-- 内容列表 - 使用简单的布局 -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/partitionsRecyclerView"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior" />
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
     <!-- 进度条 -->
     <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/progressIndicator"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="top"
         android:visibility="gone"
         app:indicatorColor="?attr/colorPrimary"
         app:trackColor="?attr/colorSurfaceVariant" />
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+</LinearLayout>

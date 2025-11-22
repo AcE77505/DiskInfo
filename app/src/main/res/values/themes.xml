@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- 父主题：MD3 自带日夜切换与动态颜色 -->
-    <!-- values/themes.xml -->
     <style name="Theme.PartitionInfo" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- 主色：紫（日夜共用，MD3 会自动切到深色紫） -->
         <item name="colorPrimary">@color/md_theme_primary</item>
         <item name="colorOnPrimary">@color/md_theme_onPrimary</item>
         <item name="colorPrimaryContainer">@color/md_theme_primaryContainer</item>
-        <item name="colorOnPrimaryContainer">@color/md_theme_onPrimaryContainer</item>
+        <item name="colorOnPrimaryContainer">@color/md_theme_onSurfaceVariant</item>
 
         <!-- 表面 -->
         <item name="colorSurface">@color/md_theme_surface</item>
@@ -15,12 +13,7 @@
         <item name="colorSurfaceVariant">@color/md_theme_surfaceVariant</item>
         <item name="colorOnSurfaceVariant">@color/md_theme_onSurfaceVariant</item>
 
-        <!-- 系统栏：交给 MD3 自动切换 -->
-        <!-- 透明状态栏 -->
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <!-- 可选：透明导航栏 -->
-        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-
-        <!-- 启用状态栏图标颜色自适应 -->
+        <item name="android:statusBarColor">@color/md_theme_surface</item>
+        <item name="android:navigationBarColor">@color/md_theme_surface</item>
     </style>
 </resources>

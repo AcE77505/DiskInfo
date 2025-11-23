@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 外观设置选项 -->
+    <string-array name="appearance_options">
+        <item>跟随系统</item>
+        <item>浅色</item>
+        <item>深色</item>
+    </string-array>
+
+    <string-array name="appearance_options_legacy">
+        <item>浅色</item>
+        <item>深色</item>
+    </string-array>
+
+    <!-- 字体大小显示文本 -->
+    <string-array name="text_size_display_names">
+        <item>很小</item>
+        <item>较小</item>
+        <item>标准</item>
+        <item>较大</item>
+        <item>很大</item>
+    </string-array>
+</resources>

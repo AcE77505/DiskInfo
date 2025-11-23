@@ -9,6 +9,7 @@ import android.util.TypedValue
 import android.view.Menu
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -61,6 +62,9 @@ class MainActivity : AppCompatActivity() {
             DynamicColors.applyToActivityIfAvailable(this)
         }
         super.onCreate(savedInstanceState)
+
+        applyAppearanceMode()
+
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
         setContentView(R.layout.activity_main)
@@ -68,6 +72,33 @@ class MainActivity : AppCompatActivity() {
         setupViews()
         setupRecyclerView()
         loadPartitionData()
+    }
+
+    /**
+     * 应用外观模式设置
+     */
+    private fun applyAppearanceMode() {
+        val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
+        // 直接使用硬编码的默认值0
+        val appearanceMode = prefs.getInt("appearance_mode", 0)
+
+        when (appearanceMode) {
+            0 -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                } else {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                }
+            }
+            1 -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                } else {
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                }
+            }
+            2 -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        }
     }
 
     private fun setupViews() {

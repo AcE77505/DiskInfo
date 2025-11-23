@@ -6,8 +6,11 @@ import android.util.TypedValue
 import android.os.Bundle
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Spinner
+import android.widget.ArrayAdapter
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.view.WindowCompat
@@ -20,7 +23,8 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var usageSizeSeekBar: SeekBar
     private lateinit var otherTextSizeSeekBar: SeekBar
     private lateinit var hideLoopDevicesSwitch: SwitchMaterial
-    private lateinit var defaultCopyInfoSwitch: SwitchMaterial // 新增
+    private lateinit var defaultCopyInfoSwitch: SwitchMaterial
+    private lateinit var appearanceSpinner: Spinner
 
     private lateinit var displaySizeValue: TextView
     private lateinit var partitionNameSizeValue: TextView
@@ -28,6 +32,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var otherTextSizeValue: TextView
 
     private var settingsChanged = false
+    private var appearanceOptions = arrayOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,9 +40,10 @@ class SettingsActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_settings)
 
-        // 设置返回按钮处理
-        setupBackPressedHandler()
+        // 初始化外观选项（根据系统版本）
+        initAppearanceOptions()
 
+        setupBackPressedHandler()
         setupViews()
         loadSettings()
         setupListeners()
@@ -45,12 +51,21 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     /**
-     * 设置返回按钮处理 - 使用新的 OnBackPressedDispatcher API
+     * 根据系统版本初始化外观选项
      */
+    private fun initAppearanceOptions() {
+        appearanceOptions = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            // Android 9.0 (Pie) 及以上支持系统级深色模式
+            resources.getStringArray(R.array.appearance_options)
+        } else {
+            // Android 8.1 及以下不支持系统级深色模式
+            resources.getStringArray(R.array.appearance_options_legacy)
+        }
+    }
+
     private fun setupBackPressedHandler() {
         val onBackPressedCallback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                // 处理返回按钮逻辑
                 setResult(if (settingsChanged) RESULT_OK else RESULT_CANCELED)
                 finish()
             }
@@ -64,13 +79,11 @@ class SettingsActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
 
-        // 导航图标染色：跟随主题 colorOnSurface
+        // 导航图标染色
         val onSurfaceColor = resolveColorOnSurface()
         toolbar.navigationIcon?.colorFilter =
             PorterDuffColorFilter(onSurfaceColor, PorterDuff.Mode.SRC_ATOP)
 
-        // 菜单图标染色（可选，若仍想手动）
-        // 若决定完全交给 MD3，可删除下方循环
         toolbar.setOnMenuItemClickListener { item ->
             item.icon?.colorFilter =
                 PorterDuffColorFilter(onSurfaceColor, PorterDuff.Mode.SRC_ATOP)
@@ -82,17 +95,20 @@ class SettingsActivity : AppCompatActivity() {
         usageSizeSeekBar = findViewById(R.id.usageSizeSeekBar)
         otherTextSizeSeekBar = findViewById(R.id.otherTextSizeSeekBar)
         hideLoopDevicesSwitch = findViewById(R.id.hideLoopDevicesSwitch)
-        defaultCopyInfoSwitch = findViewById(R.id.defaultCopyInfoSwitch) // 新增
+        defaultCopyInfoSwitch = findViewById(R.id.defaultCopyInfoSwitch)
+        appearanceSpinner = findViewById(R.id.appearanceSpinner)
 
         displaySizeValue = findViewById(R.id.displaySizeValue)
         partitionNameSizeValue = findViewById(R.id.partitionNameSizeValue)
         usageSizeValue = findViewById(R.id.usageSizeValue)
         otherTextSizeValue = findViewById(R.id.otherTextSizeValue)
+
+        // 设置外观下拉框适配器
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, appearanceOptions)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        appearanceSpinner.adapter = adapter
     }
 
-    /**
-     * 通过主题属性解析 colorOnSurface 色值
-     */
     private fun resolveColorOnSurface(): Int {
         val typedValue = TypedValue()
         theme.resolveAttribute(android.R.attr.colorForeground, typedValue, true)
@@ -105,12 +121,17 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun loadSettings() {
         val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
+
         displaySizeSeekBar.progress = prefs.getInt("display_size", 2)
         partitionNameSizeSeekBar.progress = prefs.getInt("partition_name_size", 2)
         usageSizeSeekBar.progress = prefs.getInt("usage_size", 2)
         otherTextSizeSeekBar.progress = prefs.getInt("other_text_size", 2)
         hideLoopDevicesSwitch.isChecked = prefs.getBoolean("hide_loop_devices", false)
-        defaultCopyInfoSwitch.isChecked = prefs.getBoolean("default_copy_info", false) // 新增，默认关闭
+        defaultCopyInfoSwitch.isChecked = prefs.getBoolean("default_copy_info", false)
+
+        // 0的意思是默认值
+        val appearanceMode = prefs.getInt("appearance_mode", 0)
+        appearanceSpinner.setSelection(appearanceMode)
     }
 
     private fun setupListeners() {
@@ -122,13 +143,11 @@ class SettingsActivity : AppCompatActivity() {
                     settingsChanged = true
                 }
             }
-
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-        partitionNameSizeSeekBar.setOnSeekBarChangeListener(object :
-            SeekBar.OnSeekBarChangeListener {
+        partitionNameSizeSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {
                     saveSetting("partition_name_size", progress)
@@ -136,7 +155,6 @@ class SettingsActivity : AppCompatActivity() {
                     settingsChanged = true
                 }
             }
-
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
@@ -149,7 +167,6 @@ class SettingsActivity : AppCompatActivity() {
                     settingsChanged = true
                 }
             }
-
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
@@ -162,7 +179,6 @@ class SettingsActivity : AppCompatActivity() {
                     settingsChanged = true
                 }
             }
-
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
@@ -172,10 +188,50 @@ class SettingsActivity : AppCompatActivity() {
             settingsChanged = true
         }
 
-        // 新增：默认复制信息开关监听器
         defaultCopyInfoSwitch.setOnCheckedChangeListener { _, isChecked ->
             saveSetting("default_copy_info", isChecked)
             settingsChanged = true
+        }
+
+        // 外观下拉框监听器
+        appearanceSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: android.view.View?, position: Int, id: Long) {
+                saveSetting("appearance_mode", position)
+                // 直接应用外观模式
+                applyAppearanceMode(position)
+                settingsChanged = true
+            }
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+    }
+
+    /**
+     * 应用外观模式
+     */
+    private fun applyAppearanceMode(mode: Int) {
+        when (mode) {
+            0 -> {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    // 跟随系统
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+                } else {
+                    // 浅色模式
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                }
+            }
+            1 -> {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                    // 浅色模式
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+                } else {
+                    // 深色模式
+                    AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+                }
+            }
+            2 -> {
+                // 深色模式
+                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            }
         }
     }
 
@@ -188,15 +244,8 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateValueDisplay(textView: TextView, progress: Int) {
-        val displayText = when (progress) {
-            0 -> "很小"
-            1 -> "较小"
-            2 -> "标准"
-            3 -> "较大"
-            4 -> "很大"
-            else -> "标准"
-        }
-        textView.text = displayText
+        val displayNames = resources.getStringArray(R.array.text_size_display_names)
+        textView.text = displayNames.getOrElse(progress) { displayNames[2] }
     }
 
     private fun updateAllValueDisplays() {

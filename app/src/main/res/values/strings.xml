@@ -13,4 +13,10 @@
     <string name="mounted_partitions">已挂载: %d</string>
     <string name="total_space">总空间: %s</string>
     <string name="available_space">可用空间: %s</string>
+
+    <!-- 新增外观设置相关字符串 -->
+    <string name="appearance_title">外观</string>
+    <string name="appearance_follow_system">跟随系统</string>
+    <string name="appearance_light">浅色</string>
+    <string name="appearance_dark">深色</string>
 </resources>

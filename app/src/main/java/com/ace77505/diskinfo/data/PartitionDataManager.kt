@@ -119,15 +119,14 @@ object PartitionDataManager {
         return try {
             val devicePath = "/dev/block/$deviceName"
 
+            // 获取分区显示名称
+            val displayName = partitionNames[deviceName] ?: deviceName
+
             // 获取分区大小信息
             val size = PartitionSizeCalculator.getPartitionSize(deviceName) { devName, message ->
                 addDebugInfo(devName, message)
             }
             addDebugInfo(deviceName, "Partition size: $size bytes")
-
-            // 获取分区显示名称
-            val displayName = partitionNames[deviceName] ?: deviceName
-            addDebugInfo(deviceName, "Display name: $displayName (mapped from: $deviceName)")
 
             // 获取文件系统类型和挂载信息
             val mountInfoForDevice = mountInfo[deviceName]
@@ -136,19 +135,14 @@ object PartitionDataManager {
             val isReadOnly = mountInfoForDevice?.isReadOnly ?: false
             val mountPoint = mountInfoForDevice?.mountPoint ?: ""
 
-            addDebugInfo(deviceName, "Mount info - mounted: $isMounted, fs: $fileSystemType, mountPoint: $mountPoint, readOnly: $isReadOnly")
-
             // 检查是否为 vold 设备
             val voldDeviceInfo = voldDevices[deviceName]
             val isVoldDevice = voldDeviceInfo != null
-            val voldDevice = voldDeviceInfo?.voldDevice ?: ""
-            addDebugInfo(deviceName, "Vold device: $isVoldDevice $voldDevice")
 
             // 获取空间使用信息
             val (usedSpace, availableSpace) = when {
                 isMounted && mountPoint.isNotEmpty() -> {
                     val spaceInfo = SpaceInfoManager.getSpaceInfo(mountPoint)
-                    addDebugInfo(deviceName, "Space info from mount: used=${spaceInfo.first}, available=${spaceInfo.second}")
                     spaceInfo
                 }
                 isVoldDevice -> {
@@ -156,11 +150,9 @@ object PartitionDataManager {
                         voldDeviceInfo, mountPoint) { devName, message ->
                         addDebugInfo(devName, message)
                     }
-                    addDebugInfo(deviceName, "Space info from vold: used=${spaceInfo.first}, available=${spaceInfo.second}")
                     spaceInfo
                 }
                 else -> {
-                    addDebugInfo(deviceName, "No space info available")
                     Pair(0L, 0L)
                 }
             }
@@ -171,7 +163,6 @@ object PartitionDataManager {
             } else {
                 0
             }
-            addDebugInfo(deviceName, "Usage percentage: $usagePercentage%")
 
             // 处理 vold 设备的特殊逻辑
             var finalFileSystemType = fileSystemType
@@ -188,8 +179,6 @@ object PartitionDataManager {
                     finalMountPoint = VoldDeviceManager.findVoldMountPoint(voldDeviceInfo.voldDevice) ?: ""
                 }
             }
-
-            addDebugInfo(deviceName, "Final fs type: $finalFileSystemType, final mount point: $finalMountPoint")
 
             // 确定是否真正挂载
             val finalIsMounted = isMounted || isVoldDevice
@@ -269,12 +258,12 @@ object PartitionDataManager {
             addDebugInfo(deviceName, "Vold-only display name: $displayName")
 
             // 查找挂载信息
-            var mountPoint = VoldDeviceManager.findVoldMountPoint(voldInfo.voldDevice) ?: ""
+            val mountPoint = VoldDeviceManager.findVoldMountPoint(voldInfo.voldDevice) ?: ""
             val isMounted = mountPoint.isNotEmpty()
             addDebugInfo(deviceName, "Vold-only mount point: $mountPoint, mounted: $isMounted")
 
             // 获取文件系统类型
-            var fileSystemType = VoldDeviceManager.getVoldFileSystemType(voldInfo.voldDevice) ?: "vold_managed"
+            val fileSystemType = VoldDeviceManager.getVoldFileSystemType(voldInfo.voldDevice) ?: "vold_managed"
             addDebugInfo(deviceName, "Vold-only filesystem: $fileSystemType")
 
             // 获取空间信息
@@ -334,9 +323,7 @@ object PartitionDataManager {
      * 添加调试信息（只针对 mmcblk1pX 设备）
      */
     private fun addDebugInfo(deviceName: String, message: String) {
-        if (deviceName.startsWith("mmcblk1p")) {
-            debugInfo.append("[$deviceName] $message\n")
-        }
+        debugInfo.append("[$deviceName] $message\n")
     }
 
     /**

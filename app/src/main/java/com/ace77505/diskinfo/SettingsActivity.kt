@@ -51,14 +51,14 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     /**
-     * 根据系统版本初始化外观选项
+     * 初始化外观选项
      */
     private fun initAppearanceOptions() {
         appearanceOptions = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-            // Android 9.0 (Pie) 及以上支持系统级深色模式
+            // 9.0 及以上支持系统级深色模式
             resources.getStringArray(R.array.appearance_options)
         } else {
-            // Android 8.1 及以下不支持系统级深色模式
+            // 8.1 及以下不支持系统级深色模式
             resources.getStringArray(R.array.appearance_options_legacy)
         }
     }

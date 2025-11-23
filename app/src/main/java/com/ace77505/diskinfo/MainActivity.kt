@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.Build
 import android.util.TypedValue
 import android.view.Menu
+import android.view.MenuItem
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -16,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.ace77505.diskinfo.data.PartitionDataManager
 import com.ace77505.diskinfo.data.PartitionInfo
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.*
 import androidx.core.view.get
 import com.google.android.material.color.DynamicColors
@@ -218,15 +220,34 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showError(error: String) {
-        com.google.android.material.snackbar.Snackbar.make(
+        Snackbar.make(
             findViewById(android.R.id.content),
             error,
-            com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+            Snackbar.LENGTH_LONG
         ).show()
     }
 
-    override fun onOptionsItemSelected(item: android.view.MenuItem): Boolean {
+    /**
+     * 显示刷新成功消息
+     */
+    private fun showRefreshSuccessMessage() {
+        Snackbar.make(findViewById(android.R.id.content), "分区数据已刷新", Snackbar.LENGTH_SHORT).show()
+    }
+
+    /**
+     * 显示刷新错误消息
+     */
+    private fun showRefreshErrorMessage(message: String) {
+        Snackbar.make(findViewById(android.R.id.content), "刷新失败: $message", Snackbar.LENGTH_LONG).show()
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            R.id.action_refresh -> {
+                // 执行刷新操作
+                refreshPartitionData()
+                true
+            }
             R.id.action_settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
                 // 使用新的 Activity Result API 替代 startActivityForResult
@@ -234,6 +255,35 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    /**
+     * 刷新分区数据
+     */
+    private fun refreshPartitionData() {
+        loadJob?.cancel()
+        showLoading(true)
+
+        loadJob = mainScope.launch {
+            try {
+                val partitions = withContext(Dispatchers.IO) {
+                    // 重新获取分区数据
+                    val rawPartitions = PartitionDataManager.getPartitionInfo(applicationContext)
+
+                    // 预处理分区类型
+                    rawPartitions.map { partition ->
+                        PartitionDataManager.processPartitionType(partition)
+                    }
+                }
+
+                showLoading(false)
+                updateUI(partitions)
+                showRefreshSuccessMessage()
+            } catch (e: Exception) {
+                showLoading(false)
+                showRefreshErrorMessage(e.message ?: "刷新失败")
+            }
         }
     }
 

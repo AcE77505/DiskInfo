@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.Build
 import android.util.TypedValue
 import android.view.Menu
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
@@ -19,8 +20,7 @@ import androidx.core.view.get
 import com.google.android.material.color.DynamicColors
 import androidx.core.view.size
 
-
-    class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: androidx.recyclerview.widget.RecyclerView
     private lateinit var adapter: PartitionAdapter
@@ -29,6 +29,32 @@ import androidx.core.view.size
 
     private val mainScope = MainScope()
     private var loadJob: Job? = null
+
+    // 使用新的 Activity Result API 替代 startActivityForResult
+    private val settingsActivityResultLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            // 只在设置被修改时才更新界面
+            applyTextSizeSettings()
+
+            // 修复：当隐藏loop设备设置改变时，重新加载分区数据
+            val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
+            val currentHideLoopSetting = prefs.getBoolean("hide_loop_devices", false)
+
+            // 如果隐藏loop设备的设置发生了变化，重新加载数据
+            if (this::adapter.isInitialized) {
+                val shouldReloadData = adapter.hideLoopDevices != currentHideLoopSetting
+                if (shouldReloadData) {
+                    loadPartitionData() // 重新加载完整的分区数据
+                } else {
+                    applyTextSizeSettings() // 只更新字体设置
+                }
+            } else {
+                applyTextSizeSettings()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -44,7 +70,7 @@ import androidx.core.view.size
         loadPartitionData()
     }
 
-        private fun setupViews() {
+    private fun setupViews() {
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
@@ -80,7 +106,8 @@ import androidx.core.view.size
         adapter.setOnItemClickListener(object : PartitionAdapter.OnItemClickListener {
             override fun onItemClick(partition: PartitionInfo) {
                 val intent = Intent(this@MainActivity, PartitionDetailActivity::class.java).apply {
-                    putExtra(PartitionDetailActivity.EXTRA_PARTITION_INFO, partition)
+                    // 使用 JSON 字符串代替 Parcelable
+                    putExtra(PartitionDetailActivity.EXTRA_PARTITION_INFO, partition.toJson())
                 }
                 startActivity(intent)
             }
@@ -92,6 +119,7 @@ import androidx.core.view.size
         // 初始加载设置
         applyTextSizeSettings()
     }
+
     private fun loadPartitionData() {
         loadJob?.cancel()
         showLoading(true)
@@ -170,41 +198,27 @@ import androidx.core.view.size
         return when (item.itemId) {
             R.id.action_settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
-                startActivityForResult(intent, 1) // 使用 startActivityForResult
+                // 使用新的 Activity Result API 替代 startActivityForResult
+                settingsActivityResultLauncher.launch(intent)
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
     }
 
-    // 处理设置页面返回的结果
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == 1 && resultCode == RESULT_OK) {
-            // 只在设置被修改时才更新界面
-            applyTextSizeSettings()
+    // 移除已弃用的 onActivityResult 方法
+    // override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+    //     super.onActivityResult(requestCode, resultCode, data)
+    //     if (requestCode == 1 && resultCode == RESULT_OK) {
+    //         // 这部分逻辑已移到 settingsActivityResultLauncher 的回调中
+    //     }
+    // }
 
-            // 修复：当隐藏loop设备设置改变时，重新加载分区数据
-            val prefs = getSharedPreferences("app_settings", MODE_PRIVATE)
-            val currentHideLoopSetting = prefs.getBoolean("hide_loop_devices", false)
-
-            // 如果隐藏loop设备的设置发生了变化，重新加载数据
-            if (this::adapter.isInitialized) {
-                val shouldReloadData = adapter.hideLoopDevices != currentHideLoopSetting
-                if (shouldReloadData) {
-                    loadPartitionData() // 重新加载完整的分区数据
-                } else {
-                    applyTextSizeSettings() // 只更新字体设置
-                }
-            } else {
-                applyTextSizeSettings()
-            }
-        }
-    }
     override fun onDestroy() {
         super.onDestroy()
         mainScope.cancel()
     }
+
     override fun onResume() {
         super.onResume()
         // 每次回到页面时检查主题变化

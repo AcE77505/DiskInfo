@@ -58,18 +58,21 @@ class PartitionDetailActivity : AppCompatActivity() {
     }
 
     private fun loadPartitionData() {
-        // 使用新的 getParcelableExtra 方法
-        val partition = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra(EXTRA_PARTITION_INFO, PartitionInfo::class.java)
-        } else {
-            @Suppress("DEPRECATION")
-            intent.getParcelableExtra(EXTRA_PARTITION_INFO)
-        }
+        try {
+            val json = intent.getStringExtra(EXTRA_PARTITION_INFO)
+            val partition = if (!json.isNullOrEmpty()) {
+                PartitionInfo.fromJson(json)
+            } else {
+                null
+            }
 
-        if (partition != null) {
-            updateUI(partition)
-        } else {
-            finish() // 如果没有分区数据，关闭页面
+            if (partition != null) {
+                updateUI(partition)
+            } else {
+                finish()
+            }
+        } catch (_: Exception) {
+            finish()
         }
     }
 

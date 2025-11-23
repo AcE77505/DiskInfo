@@ -51,18 +51,9 @@ object PartitionDataManager {
 
             // 获取分区详细信息，保持原始顺序
             orderedDeviceNames.forEach { deviceName ->
-                // 特别记录OTG设备的处理
-                if (deviceName.startsWith("sdh")) {
-                    debugInfo.append("=== 正在处理OTG设备: $deviceName ===\n")
-                }
-
                 val partition = buildPartitionInfo(context, deviceName, mountInfo, voldDevices, partitionNames)
                 if (partition != null) {
                     partitions.add(partition)
-                    // 特别记录OTG设备的最终结果
-                    if (deviceName.startsWith("sdh")) {
-                        debugInfo.append("OTG设备 $deviceName 最终显示名称: ${partition.name}\n")
-                    }
                 }
             }
 
@@ -93,7 +84,7 @@ object PartitionDataManager {
             val shouldCopy = prefs.getBoolean("default_copy_info", false)
 
             if (!shouldCopy) {
-                debugInfo.append("\n=== 调试信息未复制到剪贴板（设置中已关闭默认复制） ===\n")
+                // 设置关闭，什么都不做
                 return
             }
 
@@ -106,6 +97,7 @@ object PartitionDataManager {
             debugInfo.append("\n=== 复制调试信息时出错: ${e.message} ===\n")
         }
     }
+
     /**
      * 构建分区信息 - 增强版本，支持 vold 设备
      */
@@ -323,9 +315,23 @@ object PartitionDataManager {
      * 添加调试信息（只针对 mmcblk1pX 设备）
      */
     private fun addDebugInfo(deviceName: String, message: String) {
-        debugInfo.append("[$deviceName] $message\n")
-    }
+        // 严格过滤，只记录关键信息
+        val shouldLog = when {
+            // 错误信息始终记录
+            message.startsWith("ERROR") -> true
+            // 只记录重要设备
+            deviceName.startsWith("mmcblk1") -> true
+            deviceName.startsWith("sdh") -> true // OTG设备
+            // 关键操作但避免重复
+            message.contains("mount") && !message.contains("media") -> true
+            message.contains("space") && deviceName.startsWith("mmcblk1") -> true
+            else -> false
+        }
 
+        if (shouldLog) {
+            debugInfo.append("[$deviceName] $message\n")
+        }
+    }
     /**
      * 格式化字节大小为可读字符串
      */

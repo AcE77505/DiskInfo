@@ -34,9 +34,6 @@ object PartitionOrderProvider {
                                     // 过滤掉非块设备和 ram 设备
                                     if (isValidBlockDevice(deviceName) && !deviceName.startsWith("ram")) {
                                         devices.add(deviceName)
-                                        debugInfo.append("Added device from partitions: $deviceName\n")
-                                    } else {
-                                        debugInfo.append("Skipped invalid or ram device: $deviceName\n")
                                     }
                                 }
                             }
@@ -71,7 +68,6 @@ object PartitionOrderProvider {
             e.printStackTrace()
         }
 
-        debugInfo.append("最终设备列表: ${devices.sorted()}\n")
         debugInfo.append("最终设备列表大小: ${devices.size}\n")
 
         return devices.distinct()

@@ -87,13 +87,13 @@ object VoldDeviceManager {
                             if (parts.size >= 4) {
                                 val voldDevicePath = parts[0] // 如 /dev/block/vold/public:179,1 或 /dev/block/vold/public:179:1
                                 val mountPoint = parts[1]
-                                val fileSystem = parts[2]
 
                                 // 提取 vold 设备名
                                 val voldDeviceName = voldDevicePath.substringAfterLast('/')
 
-                                debugInfo.append("Found vold mount: $voldDeviceName -> $mountPoint ($fileSystem)\n")
-
+                                if (voldDeviceName.contains("179")) { // 只记录主要设备
+                                    debugInfo.append("Found vold mount: $voldDeviceName -> $mountPoint\n")
+                                }
                                 // 尝试通过设备号查找对应的块设备
                                 if (voldDeviceName.startsWith("public:")) {
                                     // 支持两种格式：public:179,1 和 public:179:1

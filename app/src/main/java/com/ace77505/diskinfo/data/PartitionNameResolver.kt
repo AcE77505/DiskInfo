@@ -23,13 +23,13 @@ object PartitionNameResolver {
             // 1. 获取基本的分区名称
             val basicNames = getBasicPartitionNames(debugInfo)
             partitionNames.putAll(basicNames)
-            debugInfo.append("基本分区数量: ${basicNames.size}\n")
+            // 不记录基本分区数，减少调试信息冗余
 
             // 2. 从通用 by-name 目录读取
             addGenericByNamePartitions(partitionNames, debugInfo)
 
             // 3. 从 mapper 目录读取所有符号链接
-            addMapperPartitions(partitionNames, debugInfo)
+            addMapperPartitions(partitionNames)
 
         } catch (e: Exception) {
             debugInfo.append("ERROR in getPartitionNames: ${e.message}\n")
@@ -54,7 +54,6 @@ object PartitionNameResolver {
                     try {
                         val target = File(file.canonicalPath).name
                         names[target] = file.name
-                        debugInfo.append("bootdevice/by-name: $target -> ${file.name}\n")
                     } catch (_: Exception) {
                         // 忽略错误
                     }
@@ -67,12 +66,10 @@ object PartitionNameResolver {
                 // 查找所有 by-name 目录
                 val allByNameDirs = findByNameDirectoriesRecursive(platformDir, debugInfo)
 
-                debugInfo.append("=== 找到的 by-name 目录 ===\n")
+                debugInfo.append("找到 ${allByNameDirs.size} 个 by-name 目录\n")
                 allByNameDirs.forEach { dir ->
-                    debugInfo.append("  ${dir.absolutePath}\n")
                     processByNameDirectory(dir, names, debugInfo)
                 }
-                debugInfo.append("总计: ${allByNameDirs.size} 个目录\n")
             }
 
         } catch (e: Exception) {
@@ -95,7 +92,6 @@ object PartitionNameResolver {
                         val target = File(targetPath).name
                         val linkName = file.name
                         names[target] = linkName
-                        debugInfo.append("by-name: $target -> $linkName (${file.absolutePath} -> $targetPath)\n")
                     } else {
                         // 如果 readlink 失败，尝试备用方法
                         try {
@@ -103,7 +99,6 @@ object PartitionNameResolver {
                             val target = canonicalFile.name
                             val linkName = file.name
                             names[target] = linkName
-                            debugInfo.append("by-name(备用): $target -> $linkName\n")
                         } catch (e: Exception) {
                             debugInfo.append("错误解析符号链接 ${file.absolutePath}: ${e.message}\n")
                         }
@@ -127,9 +122,6 @@ object PartitionNameResolver {
                 try {
                     val target = File(file.canonicalPath).name
                     partitionNames[target] = file.name
-                    if (target.startsWith("mmcblk1p")) {
-                        debugInfo.append("by-name: $target -> ${file.name}\n")
-                    }
                 } catch (_: Exception) {
                     // 忽略错误
                 }
@@ -142,16 +134,13 @@ object PartitionNameResolver {
     /**
      * 添加 mapper 分区
      */
-    private fun addMapperPartitions(partitionNames: MutableMap<String, String>, debugInfo: StringBuilder) {
+    private fun addMapperPartitions(partitionNames: MutableMap<String, String>) {
         val mapperDir = File(BLOCK_MAPPER)
         if (mapperDir.exists() && mapperDir.isDirectory) {
             mapperDir.listFiles()?.forEach { file ->
                 try {
                     val target = File(file.canonicalPath).name
                     partitionNames[target] = file.name
-                    if (target.startsWith("mmcblk1p")) {
-                        debugInfo.append("mapper: $target -> ${file.name}\n")
-                    }
                 } catch (_: Exception) {
                     // 忽略错误
                 }
@@ -171,7 +160,6 @@ object PartitionNameResolver {
                     if (file.isDirectory) {
                         if (file.name == "by-name") {
                             byNameDirs.add(file)
-                            debugInfo.append("Found by-name: ${file.absolutePath}\n")
                         } else {
                             // 递归搜索子目录，但跳过一些不必要的深层目录
                             if (!shouldSkipDirectory(file)) {

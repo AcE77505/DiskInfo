@@ -127,8 +127,8 @@ object MountInfoReader {
             }
 
             // 特别记录重要分区的解析结果
-            if (devicePath.contains("userdata") || devicePath.contains("cache") ||
-                devicePath.contains("system") || devicePath.contains("/data")) {
+            if ((devicePath.contains("userdata") || devicePath.contains("cache") ||
+                devicePath.contains("system")) && !devicePath.contains("/data/media")) {
                 debugInfo.append("Device name resolution: $devicePath -> $result\n")
             }
 
@@ -152,7 +152,7 @@ object MountInfoReader {
                 val canonicalPath = linkFile.canonicalPath
                 val deviceName = File(canonicalPath).name
                 if (devicePath.contains("userdata") || devicePath.contains("cache") || devicePath.contains("system")) {
-                    debugInfo.append("$type: $devicePath -> $canonicalPath -> $deviceName\n")
+                    debugInfo.append("$type: ${File(devicePath).name} -> $deviceName\n")
                 }
                 return deviceName
             } catch (e: Exception) {

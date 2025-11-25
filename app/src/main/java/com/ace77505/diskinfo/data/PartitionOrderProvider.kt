@@ -47,13 +47,14 @@ object PartitionOrderProvider {
                 addDevicesFromSysBlock(devices, debugInfo)
             }
 
-            // 重要修复：只添加实际存在的设备，不添加虚假设备
+            // 修复：只添加实际存在的设备，不添加虚假设备
+            // 可能在内置存储有多个分区表的设备上出现意外排除掉部分特殊分区的问题
             val missingDevices = partitionNames.keys - devices.toSet()
 
             if (missingDevices.isNotEmpty()) {
                 debugInfo.append("=== 发现缺失的设备 ===\n")
                 missingDevices.forEach { device ->
-                    // 只添加确实存在的块设备，排除 ram 设备
+                    // 排除 ram 设备
                     if (isValidBlockDevice(device) && !device.startsWith("ram") &&
                         PartitionDeviceValidator.isPhysicalDeviceExists(device, debugInfo)) {
                         debugInfo.append("添加确实存在的设备: $device\n")

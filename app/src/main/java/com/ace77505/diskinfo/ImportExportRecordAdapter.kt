@@ -30,7 +30,6 @@ class ImportExportRecordAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val record = records[position]
 
-        // 直接使用硬编码字符串，避免资源引用问题
         holder.typeText.text = when (record.type) {
             ImportExportRecord.TYPE_IMPORT -> "导入"
             ImportExportRecord.TYPE_EXPORT -> "导出"

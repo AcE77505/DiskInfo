@@ -29,7 +29,6 @@ object MountInfoReader {
                             val fileSystem = parts[2]
                             val options = parts[3]
 
-                            // 修复只读检测逻辑
                             val isReadOnly = when {
                                 options.contains("rw") -> false
                                 options.contains("ro") -> true

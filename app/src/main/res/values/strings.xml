@@ -19,4 +19,31 @@
     <string name="appearance_follow_system">跟随系统</string>
     <string name="appearance_light">浅色</string>
     <string name="appearance_dark">深色</string>
+
+    <!-- 导入导出相关字符串 -->
+    <string name="action_import">导入</string>
+    <string name="action_export">导出</string>
+    <string name="title_import_export_records">导入导出记录</string>
+    <string name="message_import_success">已导入分区数据: %s</string>
+    <string name="message_export_success">导出成功</string>
+    <string name="message_import_failed">导入失败</string>
+    <string name="message_export_failed">导出失败</string>
+    <string name="message_viewing_imported_data">当前正在查看导入数据，无法刷新</string>
+    <string name="title_cancel_import_dialog">取消查看导入数据</string>
+    <string name="message_cancel_import_dialog">确定要返回查看本机分区信息吗？</string>
+    <string name="button_confirm">确定</string>
+    <string name="button_cancel">取消</string>
+    <string name="text_import_type">导入</string>
+    <string name="text_export_type">导出</string>
+    <string name="text_success">成功</string>
+    <string name="text_failed">失败</string>
+    <string name="text_partitions_count">%d 个分区</string>
+    <string name="error_file_not_found">文件不存在</string>
+    <string name="error_file_format">文件格式错误</string>
+
+    <!-- 记录状态消息 -->
+    <string name="message_export_success_detail">成功导出 %d 个分区</string>
+    <string name="message_import_success_detail">成功导入 %d 个分区</string>
+    <string name="message_export_error">导出失败: %s</string>
+    <string name="message_import_error">导入失败: %s</string>
 </resources>

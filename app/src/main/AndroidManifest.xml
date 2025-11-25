@@ -3,6 +3,7 @@
     xmlns:tools="http://schemas.android.com/tools">
 
    <application
+        android:name=".DiskInfoApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -33,6 +34,10 @@
             android:theme="@style/Theme.PartitionInfo" />
        <activity
            android:name=".PartitionDetailActivity"
+           android:parentActivityName=".MainActivity"
+           android:theme="@style/Theme.PartitionInfo" />
+       <activity
+           android:name=".ImportExportActivity"
            android:parentActivityName=".MainActivity"
            android:theme="@style/Theme.PartitionInfo" />
     </application>

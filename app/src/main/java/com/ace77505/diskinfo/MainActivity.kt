@@ -8,6 +8,7 @@ import android.os.Build
 import android.util.TypedValue
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -22,6 +23,8 @@ import kotlinx.coroutines.*
 import androidx.core.view.get
 import com.google.android.material.color.DynamicColors
 import androidx.core.view.size
+import com.ace77505.diskinfo.data.ImportExportManager
+import androidx.core.net.toUri
 
 class MainActivity : AppCompatActivity() {
 
@@ -33,7 +36,11 @@ class MainActivity : AppCompatActivity() {
     private val mainScope = MainScope()
     private var loadJob: Job? = null
 
-    // 使用新的 Activity Result API 替代 startActivityForResult
+    // 导入导出相关变量
+    private var isViewingImportedData = false
+    private var importedPartitions: List<PartitionInfo> = emptyList()
+
+    // 设置 Activity Result Launcher
     private val settingsActivityResultLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -59,6 +66,98 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * 设置导入状态的副标题
+     */
+    private fun setImportSubtitle(exportTime: String?) {
+        val title = getString(R.string.app_name) // "Disk Info"
+        val subtitle = exportTime ?: "导入数据"
+
+        // 设置主标题
+        supportActionBar?.title = title
+
+        // 设置副标题（绿色文字）
+        supportActionBar?.subtitle = subtitle
+
+        // 设置副标题颜色为绿色
+        setSubtitleColor(android.R.color.holo_green_dark)
+    }
+
+    /**
+     * 设置副标题颜色
+     */
+    private fun setSubtitleColor(colorRes: Int) {
+        toolbar.post {
+            // 找到副标题 TextView 并设置颜色
+            for (i in 0 until toolbar.childCount) {
+                val child = toolbar.getChildAt(i)
+                if (child is TextView) {
+                    if (child.text == supportActionBar?.subtitle) {
+                        child.setTextColor(ContextCompat.getColor(this, colorRes))
+                        break
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 清除副标题（恢复普通状态）
+     */
+    private fun clearSubtitle() {
+        supportActionBar?.subtitle = null
+        supportActionBar?.title = getString(R.string.app_name)
+    }
+
+    // 导入导出 Activity Result Launcher
+    private val importExportLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            result.data?.let { data ->
+                val fileUri = data.getStringExtra(ImportExportActivity.EXTRA_IMPORT_FILE_URI)
+                val fileName = data.getStringExtra(ImportExportActivity.EXTRA_IMPORT_FILE_NAME)
+
+                if (fileUri != null) {
+                    // 在后台加载导入的数据
+                    loadImportedPartitions(fileUri, fileName)
+                }
+            }
+        }
+    }
+
+    /**
+     * 加载导入的分区数据
+     */
+    private fun loadImportedPartitions(fileUri: String, fileName: String?) {
+        loadJob?.cancel()
+        showLoading(true)
+
+        loadJob = mainScope.launch {
+            try {
+                val (partitions, extractedExportTime, record) = withContext(Dispatchers.IO) {
+                    val uri = fileUri.toUri()
+                    ImportExportManager.importPartitions(
+                        this@MainActivity,
+                        uri
+                    )
+                }
+
+                if (partitions != null) {
+                    showLoading(false)
+                    showImportSuccessMessage(fileName ?: "文件")
+                    // 使用提取的导出时间
+                    displayImportedPartitions(partitions, extractedExportTime)
+                } else {
+                    showLoading(false)
+                    showError("加载导入数据失败: ${record.message}")
+                }
+            } catch (e: Exception) {
+                showLoading(false)
+                showError("加载导入数据失败: ${e.message}")
+            }
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             DynamicColors.applyToActivityIfAvailable(this)
@@ -73,6 +172,7 @@ class MainActivity : AppCompatActivity() {
 
         setupViews()
         setupRecyclerView()
+        setupTitleLongClick()
         loadPartitionData()
     }
 
@@ -111,6 +211,28 @@ class MainActivity : AppCompatActivity() {
         progressIndicator = findViewById(R.id.progressIndicator)
     }
 
+    /**
+     * 设置标题长按监听（用于取消导入状态）
+     */
+    private fun setupTitleLongClick() {
+        // 标题长按监听需要在 toolbar 设置后调用
+        toolbar.post {
+            // 找到所有 TextView（包括标题和副标题）
+            for (i in 0 until toolbar.childCount) {
+                val child = toolbar.getChildAt(i)
+                if (child is TextView) {
+                    child.setOnLongClickListener {
+                        if (isViewingImportedData) {
+                            showCancelImportDialog()
+                            true
+                        } else {
+                            false
+                        }
+                    }
+                }
+            }
+        }
+    }
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
 
@@ -160,16 +282,26 @@ class MainActivity : AppCompatActivity() {
         loadJob = mainScope.launch {
             try {
                 val partitions = withContext(Dispatchers.IO) {
-                    // 获取原始分区数据
-                    val rawPartitions = PartitionDataManager.getPartitionInfo(applicationContext)
+                    if (isViewingImportedData) {
+                        // 如果正在查看导入数据，直接返回导入的数据
+                        importedPartitions
+                    } else {
+                        // 获取原始分区数据
+                        val rawPartitions = PartitionDataManager.getPartitionInfo(applicationContext)
 
-                    // 关键优化：预处理分区类型（复用现有判断逻辑）
-                    rawPartitions.map { partition ->
-                        PartitionDataManager.processPartitionType(partition)
+                        // 关键优化：预处理分区类型（复用现有判断逻辑）
+                        rawPartitions.map { partition ->
+                            PartitionDataManager.processPartitionType(partition)
+                        }
                     }
                 }
                 showLoading(false)
                 updateUI(partitions)
+
+                // 保存到 Application 供导入导出使用
+                if (!isViewingImportedData) {
+                    (application as? DiskInfoApplication)?.currentPartitions = partitions
+                }
             } catch (e: Exception) {
                 showLoading(false)
                 showError("获取分区信息失败: ${e.message}")
@@ -210,7 +342,7 @@ class MainActivity : AppCompatActivity() {
         adapter.updateHideLoopDevicesSetting(hideLoopDevices)
 
         // 如果隐藏loop设备设置改变，重新加载数据
-        if (loopSettingChanged) {
+        if (loopSettingChanged && !isViewingImportedData) {
             loadPartitionData()
         }
     }
@@ -241,16 +373,89 @@ class MainActivity : AppCompatActivity() {
         Snackbar.make(findViewById(android.R.id.content), "刷新失败: $message", Snackbar.LENGTH_LONG).show()
     }
 
+    /**
+     * 显示导入成功消息
+     */
+    private fun showImportSuccessMessage(fileName: String) {
+        Snackbar.make(
+            findViewById(android.R.id.content),
+            "已导入分区数据: $fileName",
+            Snackbar.LENGTH_LONG
+        ).show()
+    }
+
+    /**
+     * 显示导入的分区数据
+     */
+    private fun displayImportedPartitions(partitions: List<PartitionInfo>, exportTime: String?) {
+        isViewingImportedData = true
+        importedPartitions = partitions
+
+        // 设置副标题显示导出时间（绿色）
+        setImportSubtitle(exportTime)
+
+        // 显示导入的数据
+        updateUI(partitions)
+
+        // 保存到 Application
+        (application as? DiskInfoApplication)?.currentPartitions = partitions
+    }
+
+
+    /**
+     * 显示取消导入对话框
+     */
+    private fun showCancelImportDialog() {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("取消查看导入数据")
+            .setMessage("确定要返回查看本机分区信息吗？")
+            .setPositiveButton("确定") { _, _ ->
+                cancelImportView()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    /**
+     * 取消导入视图，返回本机数据
+     */
+    private fun cancelImportView() {
+        isViewingImportedData = false
+        importedPartitions = emptyList()
+
+        // 清除副标题
+        clearSubtitle()
+
+        // 重新加载本机数据
+        loadPartitionData()
+    }
+
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.action_refresh -> {
-                // 执行刷新操作
-                refreshPartitionData()
+            R.id.action_import_export -> {
+                // 导入导出按钮
+                val intent = Intent(this, ImportExportActivity::class.java)
+                importExportLauncher.launch(intent)
                 true
+            }
+            R.id.action_refresh -> {
+                if (isViewingImportedData) {
+                    // 在导入状态下，点击刷新按钮直接退出导入状态
+                    cancelImportView()
+                    Snackbar.make(
+                        findViewById(android.R.id.content),
+                        "已退出导入数据视图",
+                        Snackbar.LENGTH_SHORT
+                    ).show()
+                    true
+                } else {
+                    // 正常状态下刷新数据
+                    refreshPartitionData()
+                    true
+                }
             }
             R.id.action_settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
-                // 使用新的 Activity Result API 替代 startActivityForResult
                 settingsActivityResultLauncher.launch(intent)
                 true
             }
@@ -280,20 +485,15 @@ class MainActivity : AppCompatActivity() {
                 showLoading(false)
                 updateUI(partitions)
                 showRefreshSuccessMessage()
+
+                // 保存到 Application
+                (application as? DiskInfoApplication)?.currentPartitions = partitions
             } catch (e: Exception) {
                 showLoading(false)
                 showRefreshErrorMessage(e.message ?: "刷新失败")
             }
         }
     }
-
-    // 移除已弃用的 onActivityResult 方法
-    // override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-    //     super.onActivityResult(requestCode, resultCode, data)
-    //     if (requestCode == 1 && resultCode == RESULT_OK) {
-    //         // 这部分逻辑已移到 settingsActivityResultLauncher 的回调中
-    //     }
-    // }
 
     override fun onDestroy() {
         super.onDestroy()
@@ -304,5 +504,13 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         // 每次回到页面时检查主题变化
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // 如果正在查看导入数据，确保副标题正确显示
+        if (isViewingImportedData) {
+            // 副标题已经在 displayImportedPartitions 中设置好了
+        } else {
+            // 确保没有副标题
+            clearSubtitle()
+        }
     }
 }

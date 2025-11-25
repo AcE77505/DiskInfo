@@ -18,6 +18,7 @@
         android:background="?attr/colorSurface"
         app:title="@string/app_name"
         app:titleTextColor="?attr/colorOnSurface"
+        app:subtitleTextColor="@android:color/holo_green_dark"
         app:menu="@menu/main_menu" />
 
     <androidx.recyclerview.widget.RecyclerView

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
@@ -21,7 +22,8 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:src="@drawable/arrow_back_24"
             android:contentDescription="返回"
-            android:padding="16dp" />
+            android:padding="16dp"
+            app:tint="?attr/colorOnSurface" />
 
         <!-- 标题 - 在返回按钮右边 -->
         <TextView
@@ -52,7 +54,8 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_export"
                 android:contentDescription="导出"
-                android:padding="16dp" />
+                android:padding="16dp"
+                app:tint="?attr/colorOnSurface" />
 
             <!-- 导入按钮 -->
             <ImageButton
@@ -62,7 +65,8 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:src="@drawable/ic_import"
                 android:contentDescription="导入"
-                android:padding="16dp" />
+                android:padding="16dp"
+                app:tint="?attr/colorOnSurface" />
 
         </LinearLayout>
 

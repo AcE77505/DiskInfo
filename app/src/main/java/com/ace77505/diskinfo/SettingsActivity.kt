@@ -31,6 +31,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var usageSizeValue: TextView
     private lateinit var otherTextSizeValue: TextView
 
+    private lateinit var saveImportFilesSwitch: SwitchMaterial
     private var settingsChanged = false
     private var appearanceOptions = arrayOf<String>()
 
@@ -97,6 +98,7 @@ class SettingsActivity : AppCompatActivity() {
         hideLoopDevicesSwitch = findViewById(R.id.hideLoopDevicesSwitch)
         defaultCopyInfoSwitch = findViewById(R.id.defaultCopyInfoSwitch)
         appearanceSpinner = findViewById(R.id.appearanceSpinner)
+        saveImportFilesSwitch = findViewById(R.id.saveImportFilesSwitch)
 
         displaySizeValue = findViewById(R.id.displaySizeValue)
         partitionNameSizeValue = findViewById(R.id.partitionNameSizeValue)
@@ -128,6 +130,7 @@ class SettingsActivity : AppCompatActivity() {
         otherTextSizeSeekBar.progress = prefs.getInt("other_text_size", 2)
         hideLoopDevicesSwitch.isChecked = prefs.getBoolean("hide_loop_devices", false)
         defaultCopyInfoSwitch.isChecked = prefs.getBoolean("default_copy_info", false)
+        saveImportFilesSwitch.isChecked = prefs.getBoolean("save_import_files", true)
 
         // 0的意思是默认值
         val appearanceMode = prefs.getInt("appearance_mode", 0)
@@ -135,6 +138,10 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
+        saveImportFilesSwitch.setOnCheckedChangeListener { _, isChecked ->
+            saveSetting("save_import_files", isChecked)
+            settingsChanged = true
+        }
         displaySizeSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 if (fromUser) {

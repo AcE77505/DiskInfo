@@ -14,6 +14,9 @@ import java.io.OutputStreamWriter
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
 object ImportExportManager {
 
@@ -178,5 +181,137 @@ object ImportExportManager {
     private fun generateExportFileName(): String {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         return "${EXPORT_FILE_PREFIX}_$timestamp$FILE_EXTENSION"
+    }
+    // 在 ImportExportManager.kt 中修复 importPartitionsWithLongTime 方法
+    suspend fun importPartitionsWithLongTime(
+        context: Context,
+        inputUri: Uri
+    ): Triple<List<PartitionInfo>?, Long, ImportExportRecord> {
+        return withContext(Dispatchers.IO) {
+            try {
+                // 检查是否是文件路径（不是 content URI）
+                val uriString = inputUri.toString()
+                val (partitions, exportTimeString, record) = if (uriString.startsWith("/")) {
+                    // 这是文件路径，使用文件方式读取
+                    val file = File(uriString)
+                    if (file.exists()) {
+                        val inputStream = FileInputStream(file)
+                        val jsonString = inputStream.bufferedReader().use { it.readText() }
+                        inputStream.close()
+
+                        val (parsedPartitions, parsedExportTime) = parseJsonString(jsonString)
+                        val importRecord = ImportExportRecord(
+                            type = ImportExportRecord.TYPE_IMPORT,
+                            fileName = file.name,
+                            filePath = uriString,
+                            timestamp = Date(),
+                            success = parsedPartitions != null,
+                            message = if (parsedPartitions != null) "成功导入 ${parsedPartitions.size} 个分区" else "导入失败: 文件格式错误"
+                        )
+                        Triple(parsedPartitions, parsedExportTime, importRecord)
+                    } else {
+                        Triple(null, null, ImportExportRecord(
+                            type = ImportExportRecord.TYPE_IMPORT,
+                            fileName = "unknown",
+                            filePath = uriString,
+                            timestamp = Date(),
+                            success = false,
+                            message = "文件不存在"
+                        ))
+                    }
+                } else {
+                    // 这是 content URI，使用原有逻辑
+                    importPartitions(context, inputUri)
+                }
+
+                // 将字符串时间转换为 Long 时间戳
+                val exportTimeLong = if (exportTimeString != null) {
+                    try {
+                        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                        val date = dateFormat.parse(exportTimeString)
+                        date?.time ?: 0L
+                    } catch (e: Exception) {
+                        0L
+                    }
+                } else {
+                    0L
+                }
+
+                Triple(partitions, exportTimeLong, record)
+            } catch (e: Exception) {
+                val record = ImportExportRecord(
+                    type = ImportExportRecord.TYPE_IMPORT,
+                    fileName = "unknown",
+                    filePath = inputUri.toString(),
+                    timestamp = Date(),
+                    success = false,
+                    message = "导入失败: ${e.message}"
+                )
+                Triple(null, 0L, record)
+            }
+        }
+    }
+    // 添加从文件导入的方法
+    suspend fun importPartitionsFromFile(
+        context: Context,
+        filePath: String
+    ): Triple<List<PartitionInfo>?, Long, ImportExportRecord> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val file = File(filePath)
+                if (!file.exists()) {
+                    val record = ImportExportRecord(
+                        type = ImportExportRecord.TYPE_IMPORT,
+                        fileName = file.name,
+                        filePath = filePath,
+                        timestamp = Date(),
+                        success = false,
+                        message = "文件不存在"
+                    )
+                    return@withContext Triple(null, 0L, record)
+                }
+
+                val inputStream = FileInputStream(file)
+                val jsonString = inputStream.bufferedReader().use { it.readText() }
+                inputStream.close()
+
+                // 解析 JSON 字符串
+                val (partitions, exportTimeString) = parseJsonString(jsonString)
+
+                // 转换时间格式
+                val exportTimeLong = if (exportTimeString != null) {
+                    try {
+                        val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                        val date = dateFormat.parse(exportTimeString)
+                        date?.time ?: 0L
+                    } catch (e: Exception) {
+                        0L
+                    }
+                } else {
+                    0L
+                }
+
+                val record = ImportExportRecord(
+                    type = ImportExportRecord.TYPE_IMPORT,
+                    fileName = file.name,
+                    filePath = filePath,
+                    timestamp = Date(),
+                    success = partitions != null,
+                    message = if (partitions != null) "成功导入 ${partitions.size} 个分区" else "导入失败: 文件格式错误"
+                )
+
+                Triple(partitions, exportTimeLong, record)
+            } catch (e: Exception) {
+                val record = ImportExportRecord(
+                    type = ImportExportRecord.TYPE_IMPORT,
+                    fileName = "unknown",
+                    filePath = filePath,
+                    timestamp = Date(),
+                    success = false,
+                    message = "导入失败: ${e.message}"
+                )
+                Triple(null, 0L, record)
+            }
+        }
     }
 }

@@ -1,5 +1,6 @@
 package com.ace77505.diskinfo
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.PorterDuff
 import android.os.Bundle
@@ -22,6 +23,9 @@ import kotlinx.coroutines.*
 import com.google.android.material.color.DynamicColors
 import com.ace77505.diskinfo.data.ImportExportManager
 import androidx.core.net.toUri
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -332,21 +336,77 @@ class MainActivity : AppCompatActivity() {
             try {
                 val (partitions, extractedExportTime, record) = withContext(Dispatchers.IO) {
                     val uri = fileUri.toUri()
-                    ImportExportManager.importPartitions(this@MainActivity, uri)
+                    ImportExportManager.importPartitionsWithLongTime(this@MainActivity, uri)
                 }
 
                 if (partitions != null) {
                     showLoading(false)
                     showImportSuccessMessage(fileName ?: "文件")
-                    displayImportedPartitions(partitions, extractedExportTime)
+
+                    // 将 Long 时间戳转换为格式化的字符串
+                    val exportTimeString = if (extractedExportTime > 0L) {
+                        SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
+                            .format(Date(extractedExportTime))
+                    } else {
+                        "未知时间"
+                    }
+
+                    displayImportedPartitions(partitions, exportTimeString)
                 } else {
                     showLoading(false)
-                    showError("加载导入数据失败: ${record.message}")
+                    // 显示导入失败弹窗
+                    showImportErrorDialog(record.message)
                 }
             } catch (e: Exception) {
                 showLoading(false)
-                showError("加载导入数据失败: ${e.message}")
+                // 显示导入失败弹窗
+                showImportErrorDialog(e.message ?: "未知错误")
             }
+        }
+    }
+
+    /**
+     * 显示导入失败弹窗
+     */
+    private fun showImportErrorDialog(errorMessage: String) {
+        val dialogMessage = "加载导入数据失败: $errorMessage"
+
+        // 复制错误信息到剪贴板
+        copyToClipboard(dialogMessage)
+
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("导入失败")
+            .setMessage(dialogMessage)
+            .setPositiveButton("确定") { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setNeutralButton("复制错误信息") { dialog, _ ->
+                // 再次复制以确保用户知道已复制
+                copyToClipboard(dialogMessage)
+                showMessage("错误信息已复制到剪贴板")
+                dialog.dismiss()
+            }
+            .setOnDismissListener {
+                // 对话框关闭时显示提示
+                showMessage("错误信息已自动复制到剪贴板")
+            }
+            .show()
+    }
+    private fun showMessage(message: String) {
+        Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_SHORT).show()
+    }
+
+    /**
+     * 复制文本到剪贴板
+     */
+    private fun copyToClipboard(text: String) {
+        try {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clip = android.content.ClipData.newPlainText("导入错误信息", text)
+            clipboard.setPrimaryClip(clip)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            // 如果剪贴板复制失败，静默处理
         }
     }
 

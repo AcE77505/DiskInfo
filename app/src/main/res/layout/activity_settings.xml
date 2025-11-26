@@ -64,7 +64,8 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="16dp">
+                        android:layout_marginBottom="16dp"
+                        android:minHeight="48dp">
 
                         <TextView
                             android:layout_width="0dp"
@@ -77,7 +78,8 @@
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/rootModeSwitch"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            android:contentDescription="root模式开关" />
                     </LinearLayout>
 
                     <!-- 自定义 su 文件名 故意缩10dp以暂时解决空白过大问题-->
@@ -103,7 +105,8 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
+                        android:layout_marginBottom="12dp"
+                        android:minHeight="48dp">
 
                         <TextView
                             android:layout_width="0dp"
@@ -116,7 +119,8 @@
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/hideLoopDevicesSwitch"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            android:contentDescription="隐藏loop设备开关" />
                     </LinearLayout>
 
                     <!-- 默认复制分区信息 -->
@@ -124,7 +128,9 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:gravity="center_vertical">
+                        android:gravity="center_vertical"
+                        android:layout_marginBottom="12dp"
+                        android:minHeight="48dp">
 
                         <TextView
                             android:layout_width="0dp"
@@ -137,7 +143,31 @@
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/defaultCopyInfoSwitch"
                             android:layout_width="wrap_content"
-                            android:layout_height="wrap_content" />
+                            android:layout_height="wrap_content"
+                            android:contentDescription="默认复制分区信息开关" />
+                    </LinearLayout>
+
+                    <!-- 保存导入文件 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:minHeight="48dp">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="保存导入文件"
+                            android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/saveImportFilesSwitch"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:contentDescription="保存导入文件开关" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -168,7 +198,8 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginBottom="8dp"
+                        android:minHeight="48dp">
 
                         <TextView
                             android:layout_width="0dp"
@@ -201,7 +232,8 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginBottom="8dp"
+                        android:minHeight="48dp">
 
                         <TextView
                             android:layout_width="0dp"
@@ -234,7 +266,8 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginBottom="8dp"
+                        android:minHeight="48dp">
 
                         <TextView
                             android:layout_width="0dp"
@@ -267,7 +300,8 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginBottom="8dp"
+                        android:minHeight="48dp">
 
                         <TextView
                             android:layout_width="0dp"
@@ -300,7 +334,8 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="8dp">
+                        android:layout_marginBottom="8dp"
+                        android:minHeight="48dp">
 
                         <TextView
                             android:layout_width="0dp"
@@ -314,7 +349,8 @@
                             android:id="@+id/appearanceSpinner"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:minWidth="120dp" />
+                            android:minWidth="120dp"
+                            android:minHeight="48dp" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

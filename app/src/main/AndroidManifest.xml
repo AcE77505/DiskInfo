@@ -2,22 +2,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-   <application
-        android:name=".DiskInfoApplication"
+    <!-- android:name必须使用完整路径，不然安卓9以下可能闪退 -->
+    <application
+        android:name="com.ace77505.diskinfo.DiskInfoApplication"
         android:allowBackup="true"
+        android:configChanges="uiMode"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.PartitionInfo"
-        android:configChanges="uiMode">
-       <!-- fuck androidx.startup! -->
-       <provider
-           android:name="androidx.startup.InitializationProvider"
-           android:authorities="${applicationId}.androidx-startup"
-           tools:node="remove" />
+        android:theme="@style/Theme.PartitionInfo">
+        <!-- fuck androidx.startup! -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            tools:node="remove" />
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -32,14 +34,14 @@
             android:name=".SettingsActivity"
             android:exported="false"
             android:theme="@style/Theme.PartitionInfo" />
-       <activity
-           android:name=".PartitionDetailActivity"
-           android:parentActivityName=".MainActivity"
-           android:theme="@style/Theme.PartitionInfo" />
-       <activity
-           android:name=".ImportExportActivity"
-           android:parentActivityName=".MainActivity"
-           android:theme="@style/Theme.PartitionInfo" />
+        <activity
+            android:name=".PartitionDetailActivity"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.PartitionInfo" />
+        <activity
+            android:name=".ImportExportActivity"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/Theme.PartitionInfo" />
     </application>
 
 </manifest>

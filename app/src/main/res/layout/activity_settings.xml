@@ -58,10 +58,11 @@
                         android:textColor="?attr/colorOnSurface"
                         android:layout_marginBottom="16dp" />
 
-                    <!-- root 开关 -->
+                    <!-- root 开关 暂不开放 -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:visibility="gone"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:layout_marginBottom="16dp"
@@ -86,6 +87,7 @@
                     <com.google.android.material.textfield.TextInputLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:visibility="gone"
                         android:hint="自定义 su 文件名（留空默认 su）"
                         android:layout_marginTop="-10dp"
                         style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"

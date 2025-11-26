@@ -4,7 +4,7 @@
     <string name="about">关于</string>
     <string name="storage_summary">存储概览</string>
     <string name="partition_list">分区列表</string>
-    <string name="loading">加载中...</string>
+    <string name="loading">加载中…</string>
     <string name="mounted">已挂载</string>
     <string name="unmounted">未挂载</string>
     <string name="read_only">只读</string>
@@ -46,4 +46,21 @@
     <string name="message_import_success_detail">成功导入 %d 个分区</string>
     <string name="message_export_error">导出失败: %s</string>
     <string name="message_import_error">导入失败: %s</string>
+    <!-- 选择项目数量字符串 -->
+    <plurals name="selected_items_count">
+        <item quantity="one">已选择 %d 项</item>
+        <item quantity="other">已选择 %d 项</item>
+    </plurals>
+
+    <!-- 导入导出记录标题 -->
+    <string name="import_export_records">导入/导出记录</string>
+    <!-- 删除成功消息 -->
+    <string name="deleted_records_count">已删除 %d 条记录</string>
+    <string name="deleted_records_and_files">已删除 %d 条记录和 %d 个导入文件</string>
+    <!-- 清空成功消息 -->
+    <string name="cleared_records_count">已清空 %d 条记录</string>
+    <string name="cleared_records_and_files">已清空 %d 条记录和 %d 个导入文件</string>
+    <!-- 添加/更新记录消息 -->
+    <string name="added_new_record">已添加新记录: %s</string>
+    <string name="updated_record">已更新记录: %s</string>
 </resources>

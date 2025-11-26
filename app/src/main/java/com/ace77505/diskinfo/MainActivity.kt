@@ -1,6 +1,5 @@
 package com.ace77505.diskinfo
 
-import android.content.Context
 import android.content.Intent
 import android.graphics.PorterDuff
 import android.os.Bundle
@@ -392,6 +391,7 @@ class MainActivity : AppCompatActivity() {
             }
             .show()
     }
+
     private fun showMessage(message: String) {
         Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_SHORT).show()
     }
@@ -401,7 +401,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun copyToClipboard(text: String) {
         try {
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
             val clip = android.content.ClipData.newPlainText("导入错误信息", text)
             clipboard.setPrimaryClip(clip)
         } catch (e: Exception) {

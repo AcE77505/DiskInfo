@@ -1,14 +1,15 @@
 package com.ace77505.diskinfo
 
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.net.Uri
 import android.os.Bundle
+import android.view.View
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.ace77505.diskinfo.data.ImportExportManager
 import com.ace77505.diskinfo.data.ImportExportRecord
@@ -33,13 +34,31 @@ class ImportExportActivity : AppCompatActivity() {
     private val records = mutableListOf<ImportExportRecord>()
     private lateinit var sharedPreferences: SharedPreferences
     private lateinit var gson: Gson
+    private lateinit var recyclerView: androidx.recyclerview.widget.RecyclerView
+
+    // 选择模式相关变量
+    private lateinit var normalButtonContainer: LinearLayout
+    private lateinit var selectionButtonContainer: LinearLayout
+    private lateinit var exitSelectionButton: ImageButton
+    private lateinit var deleteSelectedButton: ImageButton
+    private lateinit var toolbarTitle: TextView
+
+    // imports 目录
+    private val importsDir: File by lazy {
+        File(filesDir, "imports").apply {
+            if (!exists()) {
+                mkdirs()
+            }
+        }
+    }
+
     companion object {
         const val EXTRA_IMPORT_FILE_URI = "import_file_uri"
         const val EXTRA_IMPORT_FILE_NAME = "import_file_name"
         const val EXTRA_EXPORT_TIME = "export_time"
         const val PREFS_NAME = "import_export_history"
         const val KEY_RECORDS = "import_export_records"
-        const val MAX_RECORDS = 50 // 最多保存50条记录
+        const val MAX_RECORDS = 50
     }
 
     private val exportLauncher = registerForActivityResult(
@@ -56,7 +75,6 @@ class ImportExportActivity : AppCompatActivity() {
                     )
                     addRecord(record)
                     showMessage("导出完成: ${record.fileName}")
-                    // 导出后不需要设置结果，直接显示成功消息
                 } else {
                     showMessage("无法获取分区数据")
                 }
@@ -79,7 +97,6 @@ class ImportExportActivity : AppCompatActivity() {
                 return@let
             }
 
-            // 如果是有效的 JSON 文件，继续执行导入逻辑
             CoroutineScope(Dispatchers.Main).launch {
                 // 检查是否应该保存导入文件
                 val shouldSaveFile = getSharedPreferences("app_settings", MODE_PRIVATE)
@@ -88,7 +105,7 @@ class ImportExportActivity : AppCompatActivity() {
                 val (partitions, exportTime, record) = if (shouldSaveFile) {
                     // 保存文件到私有存储并使用文件路径导入
                     val filePath = saveImportFileToPrivateStorage(uri, fileName ?: "unknown_file.json")
-                    ImportExportManager.importPartitionsFromFile(this@ImportExportActivity, filePath)
+                    ImportExportManager.importPartitionsFromFile(filePath)
                 } else {
                     // 直接使用 URI 导入
                     ImportExportManager.importPartitionsWithLongTime(this@ImportExportActivity, uri)
@@ -111,27 +128,15 @@ class ImportExportActivity : AppCompatActivity() {
             }
         }
     }
-
-    /**
-     * 保存导入文件到私有存储
-     */
     private suspend fun saveImportFileToPrivateStorage(uri: android.net.Uri, fileName: String): String {
         return withContext(Dispatchers.IO) {
             try {
                 val inputStream = contentResolver.openInputStream(uri)
                 inputStream?.use { input ->
-                    // 创建导入目录
-                    val filesDir = filesDir
-                    val importDir = File(filesDir, "imports")
-                    if (!importDir.exists()) {
-                        importDir.mkdirs()
-                    }
-
-                    val outputFile = File(importDir, fileName)
+                    val outputFile = File(importsDir, fileName)
                     FileOutputStream(outputFile).use { output ->
                         input.copyTo(output)
                     }
-
                     outputFile.absolutePath
                 } ?: uri.toString()
             } catch (e: Exception) {
@@ -141,7 +146,6 @@ class ImportExportActivity : AppCompatActivity() {
         }
     }
 
-    // 获取文件名的方法
     private fun getFileName(uri: android.net.Uri): String? {
         return when (uri.scheme) {
             "content" -> {
@@ -167,27 +171,22 @@ class ImportExportActivity : AppCompatActivity() {
 
         println("=== ImportExportActivity onCreate ===")
 
-        // 初始化 Gson
         gson = GsonBuilder()
             .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
             .create()
 
-        // 使用应用级别的 SharedPreferences，确保数据持久化
-        sharedPreferences = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        sharedPreferences = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
 
-        // 调试：检查当前数据状态
         debugSharedPreferences("onCreate开始")
 
         setupToolbar()
         setupRecyclerView()
+        setupSelectionMode()
         loadHistory()
 
         debugSharedPreferences("onCreate结束")
     }
 
-    /**
-     * 调试 SharedPreferences 状态
-     */
     private fun debugSharedPreferences(tag: String) {
         try {
             val allData = sharedPreferences.all
@@ -206,48 +205,225 @@ class ImportExportActivity : AppCompatActivity() {
         }
     }
 
-
     private fun setupToolbar() {
-        // 设置返回按钮点击事件
+        toolbarTitle = findViewById(R.id.toolbar_title)
+
         findViewById<ImageButton>(R.id.action_back).setOnClickListener {
             finish()
         }
 
-        // 设置导出按钮点击事件
         findViewById<ImageButton>(R.id.action_export).setOnClickListener {
             val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(System.currentTimeMillis())
             val fileName = "partition_info_$timestamp.json"
             exportLauncher.launch(fileName)
         }
 
-        // 设置导入按钮点击事件 - 根据 Android 版本使用不同策略
         findViewById<ImageButton>(R.id.action_import).setOnClickListener {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                // Android 10+ 使用原有逻辑，直接筛选 JSON 文件
                 importLauncher.launch(arrayOf("application/json"))
             } else {
-                // Android 10 以下版本，允许选择任意文件，但会检查后缀名
                 importLauncher.launch(arrayOf("*/*"))
             }
         }
 
-        // 添加长按清空历史记录功能
-        findViewById<TextView>   (R.id.toolbar_title).setOnLongClickListener {
+        toolbarTitle.setOnLongClickListener {
             showClearHistoryDialog()
             true
         }
     }
 
     private fun setupRecyclerView() {
-        val recyclerView = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.recordsRecyclerView)
+        recyclerView = findViewById(R.id.recordsRecyclerView)
         adapter = ImportExportRecordAdapter(records)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
     }
 
-    /**
-     * 加载历史记录
-     */
+    private fun setupSelectionMode() {
+        normalButtonContainer = findViewById(R.id.normal_button_container)
+        selectionButtonContainer = findViewById(R.id.selection_button_container)
+        exitSelectionButton = findViewById(R.id.action_exit_selection)
+        deleteSelectedButton = findViewById(R.id.action_delete_selected)
+
+        adapter.setOnSelectionModeChangeListener { isSelectionMode ->
+            if (isSelectionMode) {
+                normalButtonContainer.visibility = View.GONE
+                selectionButtonContainer.visibility = View.VISIBLE
+                updateSelectionTitle()
+            } else {
+                normalButtonContainer.visibility = View.VISIBLE
+                selectionButtonContainer.visibility = View.GONE
+                toolbarTitle.text = "导入/导出记录"
+            }
+        }
+
+        adapter.setOnItemLongClickListener { position ->
+            adapter.enterSelectionMode(position)
+            true
+        }
+
+        adapter.setOnSelectionChangeListener { _ ->
+            updateSelectionTitle()
+        }
+
+        exitSelectionButton.setOnClickListener {
+            adapter.exitSelectionMode()
+        }
+
+        deleteSelectedButton.setOnClickListener {
+            showDeleteConfirmationDialog()
+        }
+    }
+
+    private fun updateSelectionTitle() {
+        val selectedCount = adapter.getSelectedItems().size
+        toolbarTitle.text = "已选择 $selectedCount 项"
+    }
+
+    private fun showDeleteConfirmationDialog() {
+        val selectedCount = adapter.getSelectedItems().size
+        if (selectedCount == 0) {
+            showMessage("请先选择要删除的记录")
+            return
+        }
+
+        val selectedRecords = adapter.getSelectedRecords()
+
+        val hasImportRecords = selectedRecords.any { it.type == ImportExportRecord.TYPE_IMPORT }
+        val importRecordsCount = selectedRecords.count { it.type == ImportExportRecord.TYPE_IMPORT }
+
+        val message = StringBuilder()
+        message.append("确定要删除以下 $selectedCount 条记录吗？\n\n")
+
+        selectedRecords.take(3).forEach { record ->
+            val type = if (record.type == ImportExportRecord.TYPE_IMPORT) "导入" else "导出"
+            val time = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault()).format(record.timestamp)
+            message.append("• $type - ${record.fileName} ($time)\n")
+        }
+
+        if (selectedCount > 3) {
+            message.append("• ... 还有 ${selectedCount - 3} 条记录\n")
+        }
+
+        message.append("\n此操作不可恢复。")
+
+        val dialogBuilder = androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("删除记录")
+            .setPositiveButton("删除") { dialog, _ ->
+                performDeleteSelectedItems()
+                dialog.dismiss()
+            }
+            .setNegativeButton("取消") { dialog, _ ->
+                dialog.dismiss()
+            }
+
+        if (hasImportRecords) {
+            val warningText = "警告：删除操作会同时删除 $importRecordsCount 个导入文件！"
+            val fullMessage = "${message}\n\n$warningText"
+
+            val spannable = android.text.SpannableString(fullMessage)
+            val warningStart = fullMessage.indexOf(warningText)
+            val warningEnd = warningStart + warningText.length
+
+            val gentleRed = ContextCompat.getColor(this, android.R.color.holo_red_light)
+
+            spannable.setSpan(
+                android.text.style.ForegroundColorSpan(gentleRed),
+                warningStart,
+                warningEnd,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+
+            spannable.setSpan(
+                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                warningStart,
+                warningEnd,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+
+            dialogBuilder.setMessage(spannable)
+        } else {
+            dialogBuilder.setMessage(message.toString())
+        }
+
+        dialogBuilder.show()
+    }
+
+    private fun performDeleteSelectedItems() {
+        val selectedRecords = adapter.getSelectedRecords()
+        val selectedPositions = adapter.getSelectedItems().toList()
+        if (selectedPositions.isEmpty()) return
+
+        val hasImportRecords = selectedRecords.any { it.type == ImportExportRecord.TYPE_IMPORT }
+
+        val sortedPositions = selectedPositions.sortedDescending()
+
+        var filesDeleted = 0
+        if (hasImportRecords) {
+            selectedRecords.forEach { record ->
+                if (deleteImportFile(record)) {
+                    filesDeleted++
+                }
+            }
+        }
+
+        sortedPositions.forEach { position ->
+            if (position < records.size) {
+                records.removeAt(position)
+            }
+        }
+
+        adapter.updateData(ArrayList(records))
+        saveRecordToHistory()
+        adapter.exitSelectionMode()
+
+        val deletedCount = sortedPositions.size
+        val message = if (hasImportRecords && filesDeleted > 0) {
+            "已删除 $deletedCount 条记录和 $filesDeleted 个导入文件"
+        } else {
+            "已删除 $deletedCount 条记录"
+        }
+        showMessage(message)
+    }
+
+    private fun deleteImportFile(record: ImportExportRecord): Boolean {
+        return try {
+            if (record.type == ImportExportRecord.TYPE_IMPORT &&
+                record.filePath.contains("/imports/")) {
+                val file = File(record.filePath)
+                if (file.exists()) {
+                    file.delete()
+                } else {
+                    true
+                }
+            } else {
+                true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    private fun clearImportsDirectory(): Boolean {
+        return try {
+            if (importsDir.exists() && importsDir.isDirectory) {
+                var success = true
+                importsDir.listFiles()?.forEach { file ->
+                    if (!file.delete()) {
+                        success = false
+                    }
+                }
+                success
+            } else {
+                true
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     private fun loadHistory() {
         try {
             println("开始加载历史记录...")
@@ -255,7 +431,6 @@ class ImportExportActivity : AppCompatActivity() {
             println("从 SharedPreferences 读取的记录JSON: $recordsJson")
 
             if (recordsJson != null && recordsJson.isNotEmpty() && recordsJson != "[]") {
-                // 清理可能的转义字符
                 val cleanJson = recordsJson
                     .replace("&quot;", "\"")
                     .replace("&amp;", "&")
@@ -265,7 +440,6 @@ class ImportExportActivity : AppCompatActivity() {
                 println("清理后的JSON: $cleanJson")
 
                 if (cleanJson.trim().startsWith("[") && cleanJson.trim().endsWith("]")) {
-                    // 修复：使用更安全的方式创建TypeToken
                     val type: Type = TypeToken.getParameterized(List::class.java, ImportExportRecord::class.java).type
                     val savedRecords = gson.fromJson<List<ImportExportRecord>>(cleanJson, type)
 
@@ -274,85 +448,70 @@ class ImportExportActivity : AppCompatActivity() {
                     if (savedRecords != null && savedRecords.isNotEmpty()) {
                         records.clear()
                         records.addAll(savedRecords)
-                        adapter.notifyDataSetChanged()
+                        adapter.updateData(ArrayList(records))
                         println("成功加载 ${records.size} 条记录")
-                        showMessage("加载了 ${records.size} 条历史记录")
-                    } else {
-                        println("解析记录失败或记录为空")
-                        // 保持现有记录不变
                     }
-                } else {
-                    println("数据格式错误，不是有效的 JSON 数组")
-                    // 保持现有记录不变
                 }
-            } else {
-                println("没有找到保存的记录或记录为空")
-                // 保持现有记录不变
             }
         } catch (e: Exception) {
             e.printStackTrace()
             println("加载历史记录异常: ${e.message}")
-            showMessage("加载历史记录失败，但保留现有数据")
-            // 异常时保持现有记录不变
+            showMessage("加载历史记录失败")
         }
     }
 
     private fun addRecord(record: ImportExportRecord) {
-        // 检查是否已存在相同记录（避免重复）
-        val existingIndex = records.indexOfFirst {
-            it.fileName == record.fileName &&
-                    it.type == record.type &&
-                    it.timestamp == record.timestamp
+        val existingIndex = records.indexOfFirst { existingRecord ->
+            existingRecord.fileName == record.fileName &&
+                    existingRecord.type == record.type
         }
 
         if (existingIndex == -1) {
-            records.add(0, record) // 新的记录添加到顶部
+            records.add(0, record)
 
-            // 限制记录数量，避免过多
             if (records.size > MAX_RECORDS) {
                 records.removeAt(records.size - 1)
             }
 
-            adapter.notifyItemInserted(0)
-            val recyclerView = findViewById<androidx.recyclerview.widget.RecyclerView>(R.id.recordsRecyclerView)
+            adapter.updateData(ArrayList(records))
             recyclerView.scrollToPosition(0)
-
-            // 保存到历史记录
             saveRecordToHistory()
+            showMessage("已添加新记录: ${record.fileName}")
         } else {
-            // 如果记录已存在，更新它
-            records[existingIndex] = record
-            adapter.notifyItemChanged(existingIndex)
+            val updatedRecord = records[existingIndex].copy(
+                timestamp = record.timestamp,
+                message = record.message,
+                success = record.success
+            )
+            records[existingIndex] = updatedRecord
+
+            if (existingIndex > 0) {
+                records.removeAt(existingIndex)
+                records.add(0, updatedRecord)
+                adapter.updateData(ArrayList(records))
+                recyclerView.scrollToPosition(0)
+            } else {
+                adapter.notifyItemChanged(0)
+            }
+
             saveRecordToHistory()
+            showMessage("已更新记录: ${record.fileName}")
         }
     }
 
-
-    /**
-     * 保存记录到历史记录
-     */
     private fun saveRecordToHistory() {
         try {
-            if (records.isNotEmpty()) {
-                val recordsJson = gson.toJson(records)
-                println("准备保存 ${records.size} 条记录")
+            val recordsJson = gson.toJson(records)
+            println("准备保存 ${records.size} 条记录")
 
-                // 使用 commit() 而不是 apply() 确保立即保存
-                val success = sharedPreferences.edit()
-                    .putString(KEY_RECORDS, recordsJson)
-                    .commit()  // 使用 commit() 确保同步保存
+            val success = sharedPreferences.edit()
+                .putString(KEY_RECORDS, recordsJson)
+                .commit()
 
-                if (success) {
-                    println("保存记录成功")
-
-                    // 验证保存的数据
-                    val savedData = sharedPreferences.getString(KEY_RECORDS, null)
-                    println("验证保存的数据长度: ${savedData?.length}")
-                } else {
-                    println("保存记录失败")
-                }
+            if (success) {
+                println("保存记录成功")
             } else {
-                println("没有记录需要保存")
+                println("保存记录失败")
             }
         } catch (e: Exception) {
             e.printStackTrace()
@@ -360,76 +519,85 @@ class ImportExportActivity : AppCompatActivity() {
         }
     }
 
-
-    private fun validateAndFixSharedPreferences() {
-        try {
-            // 检查是否存在错误格式的数据
-            val allPrefs = sharedPreferences.all
-            println("SharedPreferences 中的所有键: ${allPrefs.keys}")
-
-            // 检查我们的键是否存在
-            if (sharedPreferences.contains(KEY_RECORDS)) {
-                val recordsData = sharedPreferences.getString(KEY_RECORDS, null)
-                println("KEY_RECORDS 数据类型: ${recordsData?.javaClass?.simpleName}")
-                println("KEY_RECORDS 数据内容: $recordsData")
-
-                // 如果数据包含 HTML 转义字符，修复它
-                if (recordsData != null && recordsData.contains("&quot;")) {
-                    println("检测到需要修复的数据格式")
-                    val fixedData = recordsData
-                        .replace("&quot;", "\"")
-                        .replace("&amp;", "&")
-
-                    sharedPreferences.edit()
-                        .putString(KEY_RECORDS, fixedData)
-                        .apply()
-                    println("数据修复完成")
-                }
-            } else {
-                println("KEY_RECORDS 不存在，将创建新数据")
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            println("数据验证失败: ${e.message}")
-        }
-    }
-    /**
-     * 显示清空历史记录对话框
-     */
     private fun showClearHistoryDialog() {
         if (records.isEmpty()) {
             showMessage("没有历史记录可清空")
             return
         }
 
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        val hasImportRecords = records.any { it.type == ImportExportRecord.TYPE_IMPORT }
+        val importRecordsCount = records.count { it.type == ImportExportRecord.TYPE_IMPORT }
+
+        val baseMessage = "确定要清空所有 ${records.size} 条导入导出记录吗？\n\n此操作不可恢复。"
+
+        val dialogBuilder = androidx.appcompat.app.AlertDialog.Builder(this)
             .setTitle("清空历史记录")
-            .setMessage("确定要清空所有导入导出记录吗？此操作不可恢复。")
             .setPositiveButton("清空") { dialog, _ ->
-                clearHistory()
-                showMessage("历史记录已清空")
+                performClearHistory()
                 dialog.dismiss()
             }
             .setNegativeButton("取消", null)
-            .show()
+
+        if (hasImportRecords) {
+            val warningText = "警告：清空操作会同时删除 $importRecordsCount 个导入文件！"
+            val fullMessage = "$baseMessage\n\n$warningText"
+
+            val spannable = android.text.SpannableString(fullMessage)
+            val warningStart = fullMessage.indexOf(warningText)
+            val warningEnd = warningStart + warningText.length
+
+            val gentleRed = ContextCompat.getColor(this, android.R.color.holo_red_light)
+
+            spannable.setSpan(
+                android.text.style.ForegroundColorSpan(gentleRed),
+                warningStart,
+                warningEnd,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+
+            spannable.setSpan(
+                android.text.style.StyleSpan(android.graphics.Typeface.BOLD),
+                warningStart,
+                warningEnd,
+                android.text.Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+            )
+
+            dialogBuilder.setMessage(spannable)
+        } else {
+            dialogBuilder.setMessage(baseMessage)
+        }
+
+        dialogBuilder.show()
     }
 
-    /**
-     * 清空历史记录
-     */
-    private fun clearHistory() {
+    private fun performClearHistory() {
+        val deletedCount = records.size
+
+        val hasImportRecords = records.any { it.type == ImportExportRecord.TYPE_IMPORT }
+        val importRecordsCount = records.count { it.type == ImportExportRecord.TYPE_IMPORT }
+
+        var filesDeleted = 0
+        if (hasImportRecords) {
+            if (clearImportsDirectory()) {
+                filesDeleted = importRecordsCount
+            }
+        }
+
         records.clear()
-        adapter.notifyDataSetChanged()
+        adapter.updateData(ArrayList(records))
         saveRecordToHistory()
+
+        val message = if (hasImportRecords && filesDeleted > 0) {
+            "已清空 $deletedCount 条记录和 $filesDeleted 个导入文件"
+        } else {
+            "已清空 $deletedCount 条记录"
+        }
+        showMessage(message)
     }
 
-    /**
-     * 显示导入失败弹窗
-     */
     private fun showImportErrorDialog(errorMessage: String) {
         val dialogMessage = "导入失败: $errorMessage"
 
-        // 复制错误信息到剪贴板
         copyToClipboard(dialogMessage)
 
         androidx.appcompat.app.AlertDialog.Builder(this)
@@ -439,41 +607,31 @@ class ImportExportActivity : AppCompatActivity() {
                 dialog.dismiss()
             }
             .setNeutralButton("复制错误信息") { dialog, _ ->
-                // 再次复制以确保用户知道已复制
                 copyToClipboard(dialogMessage)
                 showMessage("错误信息已复制到剪贴板")
                 dialog.dismiss()
             }
             .setOnDismissListener {
-                // 对话框关闭时显示提示
                 showMessage("错误信息已自动复制到剪贴板")
             }
             .show()
     }
 
-    /**
-     * 复制文本到剪贴板
-     */
     private fun copyToClipboard(text: String) {
         try {
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
             val clip = android.content.ClipData.newPlainText("导入错误信息", text)
             clipboard.setPrimaryClip(clip)
         } catch (e: Exception) {
             e.printStackTrace()
-            // 如果剪贴板复制失败，静默处理
         }
     }
 
-    /**
-     * 显示消息（用于弹窗中的提示）
-     */
     private fun showMessage(message: String) {
         Snackbar.make(findViewById(android.R.id.content), message, Snackbar.LENGTH_SHORT).show()
     }
 
     private fun getCurrentPartitionsFromMainActivity(): List<PartitionInfo>? {
-        // 通过 Application 类获取当前分区数据
         return (application as? DiskInfoApplication)?.currentPartitions
     }
 }

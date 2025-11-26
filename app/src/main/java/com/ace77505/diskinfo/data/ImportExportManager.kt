@@ -7,20 +7,14 @@ import android.net.Uri
 import android.util.JsonWriter
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import java.io.OutputStream
-import java.io.OutputStreamWriter
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import kotlinx.coroutines.*
+import java.text.*
+import java.util.*
+import java.io.*
 
 object ImportExportManager {
 
-    private const val EXPORT_FILE_PREFIX = "partition_info"
+    private const val EXPORT_FILE_PREFIX = "diskinfo"
     private const val FILE_EXTENSION = ".json"
 
     // 导出分区信息
@@ -230,7 +224,7 @@ object ImportExportManager {
                         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                         val date = dateFormat.parse(exportTimeString)
                         date?.time ?: 0L
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         0L
                     }
                 } else {
@@ -253,7 +247,6 @@ object ImportExportManager {
     }
     // 添加从文件导入的方法
     suspend fun importPartitionsFromFile(
-        context: Context,
         filePath: String
     ): Triple<List<PartitionInfo>?, Long, ImportExportRecord> {
         return withContext(Dispatchers.IO) {
@@ -284,7 +277,7 @@ object ImportExportManager {
                         val dateFormat = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
                         val date = dateFormat.parse(exportTimeString)
                         date?.time ?: 0L
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         0L
                     }
                 } else {

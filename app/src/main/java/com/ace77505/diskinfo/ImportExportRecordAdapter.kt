@@ -11,14 +11,21 @@ import java.text.SimpleDateFormat
 import java.util.Locale
 
 class ImportExportRecordAdapter(
-    private val records: List<ImportExportRecord>
+    private var records: List<ImportExportRecord>
 ) : RecyclerView.Adapter<ImportExportRecordAdapter.ViewHolder>() {
+
+    private var isSelectionMode = false
+    private val selectedItems = mutableSetOf<Int>()
+    private var onSelectionModeChangeListener: ((Boolean) -> Unit)? = null
+    private var onItemLongClickListener: ((Int) -> Unit)? = null
+    private var onSelectionChangeListener: ((Int) -> Unit)? = null
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val typeText: TextView = view.findViewById(R.id.typeText)
         val fileNameText: TextView = view.findViewById(R.id.fileNameText)
         val timeText: TextView = view.findViewById(R.id.timeText)
         val messageText: TextView = view.findViewById(R.id.messageText)
+        val selectionOverlay: View = view.findViewById(R.id.selectionOverlay)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -51,7 +58,87 @@ class ImportExportRecordAdapter(
             ContextCompat.getColor(context, android.R.color.holo_red_dark)
         }
         holder.messageText.setTextColor(color)
+
+        // 选择模式相关
+        val isSelected = selectedItems.contains(position)
+        holder.selectionOverlay.visibility = if (isSelected) View.VISIBLE else View.GONE
+        holder.itemView.isActivated = isSelected
+
+        // 点击事件
+        holder.itemView.setOnClickListener {
+            if (isSelectionMode) {
+                toggleSelection(position)
+            }
+            // 正常模式下点击不做任何事
+        }
+
+        // 长按事件
+        holder.itemView.setOnLongClickListener {
+            if (!isSelectionMode) {
+                onItemLongClickListener?.invoke(position)
+                true
+            } else {
+                false
+            }
+        }
     }
 
     override fun getItemCount() = records.size
+
+    fun setOnSelectionModeChangeListener(listener: (Boolean) -> Unit) {
+        this.onSelectionModeChangeListener = listener
+    }
+
+    fun setOnItemLongClickListener(listener: (Int) -> Unit) {
+        this.onItemLongClickListener = listener
+    }
+
+    fun setOnSelectionChangeListener(listener: (Int) -> Unit) {
+        this.onSelectionChangeListener = listener
+    }
+
+    fun updateData(newRecords: List<ImportExportRecord>) {
+        this.records = newRecords
+        notifyDataSetChanged()
+    }
+
+    fun enterSelectionMode(position: Int) {
+        isSelectionMode = true
+        selectedItems.add(position)
+        notifyDataSetChanged()
+        onSelectionModeChangeListener?.invoke(true)
+        onSelectionChangeListener?.invoke(selectedItems.size)
+    }
+
+    fun exitSelectionMode() {
+        isSelectionMode = false
+        selectedItems.clear()
+        notifyDataSetChanged()
+        onSelectionModeChangeListener?.invoke(false)
+        onSelectionChangeListener?.invoke(0)
+    }
+
+    fun toggleSelection(position: Int) {
+        if (selectedItems.contains(position)) {
+            selectedItems.remove(position)
+        } else {
+            selectedItems.add(position)
+        }
+        notifyItemChanged(position)
+
+        // 通知选择数量变化
+        onSelectionChangeListener?.invoke(selectedItems.size)
+
+        // 如果没有选中的项目，自动退出选择模式
+        if (selectedItems.isEmpty()) {
+            exitSelectionMode()
+        }
+    }
+
+    fun getSelectedItems(): Set<Int> = selectedItems
+
+    fun getSelectedRecords(): List<ImportExportRecord> {
+        return selectedItems.map { records[it] }
+    }
+
 }

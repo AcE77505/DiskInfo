@@ -91,13 +91,6 @@ dependencies {
     implementation libs.androidx.multidex
     implementation libs.mtdatafilesprovider
 
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.activity.compose)
-
     // 需要添加 RecyclerView 依赖
     implementation libs.androidx.recyclerview
     implementation libs.androidx.lifecycle.runtime.ktx
